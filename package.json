@@ -1,6 +1,6 @@
 {
   "name": "manifestvet",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Kubernetes manifest security linter",
   "main": "dist/lib.js",
   "types": "dist/lib.d.ts",

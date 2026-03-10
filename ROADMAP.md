@@ -19,11 +19,11 @@
 
 **Goal:** Scan manifests directly from GitHub without cloning.
 
-- [ ] `--github owner/repo` — fetch all YAML files via GitHub API
-- [ ] `--github owner/repo --branch <branch>` — branch targeting
-- [ ] `--github owner/repo --path k8s/` — subdirectory filtering
-- [ ] `--github <blob-url>` — direct file URL support
-- [ ] Rate limit handling (authenticated requests)
+- [x] `--github owner/repo` — fetch all YAML files via GitHub API
+- [x] `--github owner/repo --branch <branch>` — branch targeting
+- [x] `--github owner/repo --path k8s/` — subdirectory filtering
+- [x] `--github <blob-url>` — direct file URL support
+- [x] Rate limit handling (authenticated requests, `GITHUB_TOKEN` env var)
 
 ---
 
@@ -31,11 +31,11 @@
 
 **Goal:** Scan running workloads without touching source files.
 
-- [ ] `--cluster` — use current kubeconfig context
-- [ ] `--context <name>` — target specific kubeconfig context
-- [ ] `--namespace <ns>` / `--all-namespaces` flags
-- [ ] Fetch all workload resources via kubectl/K8s API
-- [ ] Delta mode: compare cluster state vs local manifests
+- [x] `--cluster` — use current kubeconfig context
+- [x] `--context <name>` — target specific kubeconfig context
+- [x] `--namespace <ns>` / `--all-namespaces` flags
+- [x] Fetch all workload resources via kubectl/K8s API
+- [x] Delta mode: compare cluster state vs local manifests (`--cluster --delta --dir ./k8s/`)
 
 ---
 
@@ -43,11 +43,11 @@
 
 **Goal:** Generate concrete fix snippets for each violation.
 
-- [ ] `--fix` flag — append fix suggestions to output
-- [ ] `--fix-lang ja` — Japanese-language explanations (default)
-- [ ] Per-rule fix templates (YAML patch snippets)
-- [ ] LLM-augmented suggestions for complex violations
-- [ ] `--apply-fixes` — auto-apply safe fixes to files (with backup)
+- [x] `--fix` flag — append fix suggestions to output
+- [x] `--fix-lang ja` — Japanese-language explanations (default)
+- [x] Per-rule fix templates (YAML patch snippets, all 53 rules, bilingual ja/en)
+- [x] LLM-augmented suggestions for complex violations (`--llm`, requires `ANTHROPIC_API_KEY`)
+- [x] `--apply-fixes` — auto-apply safe fixes to files (with `.manifestvet.bak` backup)
 
 ---
 
@@ -55,18 +55,29 @@
 
 **Goal:** Rich reporting and ecosystem integrations.
 
-- [ ] `--format html` — standalone HTML report with rule details
-- [ ] `--format markdown` — Markdown summary for PR comments
-- [ ] Pre-commit hook support
-- [ ] Kustomize overlay awareness
-- [ ] Policy exceptions (`# manifestvet-ignore: MV1001`)
+- [x] `--format html` — standalone HTML report with rule details and collapsible fix suggestions
+- [x] `--format markdown` — Markdown summary for PR comments (with severity badges, grouped by resource)
+- [x] Pre-commit hook support (`manifestvet hook install|uninstall|config`)
+- [x] Kustomize overlay awareness (`--kustomize <dir>`, recursively resolves resources/bases/patches)
+- [x] Policy exceptions (`# manifestvet-ignore: MV1001` / `# manifestvet-ignore-all` in YAML files)
+
+---
+
+## v1.0.0 — Enterprise Features
+
+**Goal:** Extensibility, policy-as-code, and GitOps-native validation.
+
+- [x] Custom rule authoring (`--plugin my-rules.js` — export `{ rules: Rule[] }`)
+- [x] OPA/Rego policy import (`--rego policy.rego` — `data.manifestvet.violations`)
+- [x] Admission webhook mode (`manifestvet webhook --port 8443 [--cert] [--key]`)
+- [x] Baseline diff (`--baseline baseline.json` — save on first run, diff on subsequent)
+- [ ] VS Code extension
 
 ---
 
 ## Future
 
-- [ ] Custom rule authoring (plugin API)
-- [ ] OPA/Rego policy import
-- [ ] Admission webhook mode (validate on `kubectl apply`)
-- [ ] VS Code extension
-- [ ] Baseline diff (only report new violations vs last run)
+- [ ] Custom rule authoring via YAML/DSL (no-code approach)
+- [ ] Baseline UI diff report (`--format html` baseline comparison)
+- [ ] Admission webhook Helm chart
+- [ ] VS Code extension with inline diagnostics

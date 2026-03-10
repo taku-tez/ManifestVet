@@ -1,6 +1,6 @@
 import { K8sResource } from "../parser/types";
 import { ALL_RULES } from "../rules";
-import { Violation, Severity } from "../rules/types";
+import { Violation, Severity, Rule } from "../rules/types";
 import { ManifestVetConfig } from "./config";
 
 const SEVERITY_ORDER: Record<Severity, number> = {
@@ -11,14 +11,16 @@ const SEVERITY_ORDER: Record<Severity, number> = {
 
 export function lint(
   resources: K8sResource[],
-  config: ManifestVetConfig
+  config: ManifestVetConfig,
+  extraRules: Rule[] = []
 ): Violation[] {
   const violations: Violation[] = [];
   const ignoreSet = new Set(config.ignore.map((r) => r.toUpperCase()));
   const minSeverity = SEVERITY_ORDER[config.severity];
+  const rules = [...ALL_RULES, ...extraRules];
 
   for (const resource of resources) {
-    for (const rule of ALL_RULES) {
+    for (const rule of rules) {
       if (ignoreSet.has(rule.id.toUpperCase())) continue;
       if (SEVERITY_ORDER[rule.severity] < minSeverity) continue;
 

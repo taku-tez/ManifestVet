@@ -62,6 +62,11 @@ export function formatTTY(
     lines.push(
       `  ${color}${rule}${rst}  ${color}${sev}${rst}  ${v.resource}  ${v.message}`
     );
+    if (v.fix) {
+      for (const fixLine of v.fix.split("\n")) {
+        lines.push(`  ${dim("  " + fixLine, noColor)}`);
+      }
+    }
   }
 
   lines.push("");

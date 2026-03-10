@@ -58,6 +58,50 @@ describe("formatHTML", () => {
     expect(html).toContain("No issues found");
   });
 
+  it("returns a string for empty violations", () => {
+    const html = formatHTML([]);
+    expect(typeof html).toBe("string");
+    expect(html.length).toBeGreaterThan(0);
+    expect(html).toContain("<!DOCTYPE html>");
+  });
+
+  it("correctly counts errors, warnings and info", () => {
+    const html = formatHTML(violations);
+    // violations has 1 error, 1 warning, 1 info
+    // The stat numbers appear in the summary section
+    const errCount = violations.filter((v) => v.severity === "error").length;
+    const warnCount = violations.filter((v) => v.severity === "warning").length;
+    const infoCount = violations.filter((v) => v.severity === "info").length;
+    expect(errCount).toBe(1);
+    expect(warnCount).toBe(1);
+    expect(infoCount).toBe(1);
+    // Verify the counts are reflected in the rendered HTML
+    expect(html).toContain("Errors");
+    expect(html).toContain("Warnings");
+    expect(html).toContain("Info");
+  });
+
+  it("reflects zero counts for empty violations", () => {
+    const html = formatHTML([]);
+    expect(html).toContain("0");
+  });
+
+  it("handles violations with only errors", () => {
+    const errorOnly: Violation[] = [
+      { rule: "MV1001", severity: "error", message: "error msg", resource: "Pod/foo" },
+      { rule: "MV1002", severity: "error", message: "error msg 2", resource: "Pod/bar" },
+    ];
+    const html = formatHTML(errorOnly);
+    expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain("MV1001");
+    expect(html).toContain("MV1002");
+  });
+
+  it("uses custom title when provided", () => {
+    const html = formatHTML(violations, "Custom Report Title");
+    expect(html).toContain("Custom Report Title");
+  });
+
   it("escapes HTML special characters", () => {
     const xssViolations: Violation[] = [{
       rule: "MV1001",

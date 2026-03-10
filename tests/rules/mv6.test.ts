@@ -11,6 +11,12 @@ function checkRule(ruleId: string, yaml: string) {
   return rule.check({ resource: resources[0], allResources: resources });
 }
 
+function checkRuleMulti(ruleId: string, yaml: string) {
+  const { resources } = parseYAML(yaml);
+  const rule = mv6Rules.find((r) => r.id === ruleId)!;
+  return resources.flatMap((resource) => rule.check({ resource, allResources: resources }));
+}
+
 // ============================================================================
 // MV6001 - Deployment/StatefulSet missing recommended labels
 // ============================================================================
@@ -1995,5 +2001,147 @@ spec:
 `,
     );
     expect(violations).toHaveLength(2);
+  });
+});
+
+// ============================================================================
+// MV6015 - Deployment without PodDisruptionBudget
+// ============================================================================
+describe("MV6015 - Deployment without PodDisruptionBudget", () => {
+  it("should flag Deployment with replicas:2 and no PDB", () => {
+    const violations = checkRuleMulti(
+      "MV6015",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV6015");
+    expect(violations[0].severity).toBe("info");
+    expect(violations[0].message).toContain("my-app");
+    expect(violations[0].message).toContain("2 replicas");
+    expect(violations[0].resource).toBe("Deployment/my-app");
+  });
+
+  it("should pass when Deployment with replicas:2 has a matching PDB", () => {
+    const violations = checkRuleMulti(
+      "MV6015",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-app-pdb
+  namespace: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: my-app
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should pass when Deployment has replicas:1 (PDB not required)", () => {
+    const violations = checkRuleMulti(
+      "MV6015",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: single-replica
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: single-replica
+  template:
+    metadata:
+      labels:
+        app: single-replica
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should flag Deployment with replicas:2 when PDB labels do not match", () => {
+    const violations = checkRuleMulti(
+      "MV6015",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: other-pdb
+  namespace: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: other-app
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV6015");
+    expect(violations[0].message).toContain("my-app");
   });
 });

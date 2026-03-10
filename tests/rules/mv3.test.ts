@@ -11,6 +11,12 @@ function checkRule(ruleId: string, yaml: string) {
   return rule.check({ resource: resources[0], allResources: resources });
 }
 
+function checkRuleMulti(ruleId: string, yaml: string) {
+  const { resources } = parseYAML(yaml);
+  const rule = mv3Rules.find((r) => r.id === ruleId)!;
+  return resources.flatMap((resource) => rule.check({ resource, allResources: resources }));
+}
+
 // ============================================================================
 // MV3001 - Service type NodePort
 // ============================================================================
@@ -1148,5 +1154,63 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].namespace).toBe("staging");
+  });
+});
+
+// ============================================================================
+// MV3008 - Namespace without default-deny NetworkPolicy
+// ============================================================================
+describe("MV3008 - Namespace without default-deny NetworkPolicy", () => {
+  it("should flag Namespace with no default-deny NetworkPolicy", () => {
+    const violations = checkRuleMulti(
+      "MV3008",
+      `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV3008");
+    expect(violations[0].severity).toBe("info");
+    expect(violations[0].message).toContain("my-namespace");
+    expect(violations[0].resource).toBe("Namespace/my-namespace");
+  });
+
+  it("should pass when Namespace has a default-deny NetworkPolicy with empty podSelector", () => {
+    const violations = checkRuleMulti(
+      "MV3008",
+      `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-namespace
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: my-namespace
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should skip system namespaces (kube-system)", () => {
+    const violations = checkRuleMulti(
+      "MV3008",
+      `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kube-system
+`,
+    );
+    expect(violations).toHaveLength(0);
   });
 });

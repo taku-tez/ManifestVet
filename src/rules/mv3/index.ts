@@ -395,6 +395,56 @@ const mv3007: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV3008 - Namespace without default-deny NetworkPolicy
+// ---------------------------------------------------------------------------
+const mv3008: Rule = {
+  id: "MV3008",
+  severity: "info",
+  description: "Namespace does not have a default-deny NetworkPolicy. Without one, all pod-to-pod traffic is allowed by default.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource, allResources } = ctx;
+    if (resource.kind !== "Namespace") return [];
+
+    const nsName = resource.metadata?.name;
+    if (!nsName) return [];
+
+    // Skip system namespaces
+    const systemNamespaces = ["kube-system", "kube-public", "kube-node-lease"];
+    if (systemNamespaces.includes(nsName)) return [];
+
+    const hasDefaultDeny = allResources.some((r: any) => {
+      if (r.kind !== "NetworkPolicy") return false;
+      if (r.metadata?.namespace !== nsName) return false;
+      const podSelector = r.spec?.podSelector;
+      // Empty podSelector {} selects all pods
+      const selectsAll = !podSelector || Object.keys(podSelector).length === 0 ||
+        (Object.keys(podSelector).length === 1 && podSelector.matchLabels &&
+         Object.keys(podSelector.matchLabels).length === 0);
+      if (!selectsAll) return false;
+      // Default deny ingress: no ingress field, or ingress: []
+      const denyIngress = !r.spec?.ingress || r.spec.ingress.length === 0;
+      // Default deny egress: no egress field, or egress: []
+      const denyEgress = !r.spec?.egress || r.spec.egress.length === 0;
+      return denyIngress || denyEgress;
+    });
+
+    if (!hasDefaultDeny) {
+      return [{
+        rule: "MV3008",
+        severity: "info",
+        message: `Namespace "${nsName}" has no default-deny NetworkPolicy. All pod-to-pod traffic is allowed by default.`,
+        resource: `Namespace/${nsName}`,
+        namespace: nsName,
+        path: "metadata.name",
+        fix: "Add a default-deny NetworkPolicy with an empty podSelector and no ingress/egress rules.",
+      }];
+    }
+
+    return [];
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV3 rules
 // ---------------------------------------------------------------------------
 export const mv3Rules: Rule[] = [
@@ -405,4 +455,5 @@ export const mv3Rules: Rule[] = [
   mv3005,
   mv3006,
   mv3007,
+  mv3008,
 ];

@@ -589,6 +589,50 @@ const mv6014: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV6015 - Deployment without PodDisruptionBudget
+// ---------------------------------------------------------------------------
+const mv6015: Rule = {
+  id: "MV6015",
+  severity: "info",
+  description: "Deployment with multiple replicas should have a PodDisruptionBudget to maintain availability during voluntary disruptions.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource, allResources } = ctx;
+    if (resource.kind !== "Deployment") return [];
+
+    const replicas = resource.spec?.replicas ?? 1;
+    if (replicas < 2) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const deployLabels: Record<string, string> = resource.spec?.selector?.matchLabels ?? {};
+    if (Object.keys(deployLabels).length === 0) return [];
+
+    const hasPDB = allResources.some((r: any) => {
+      if (r.kind !== "PodDisruptionBudget") return false;
+      // namespace must match (or PDB has no namespace)
+      if (r.metadata?.namespace && resource.metadata?.namespace &&
+          r.metadata.namespace !== resource.metadata.namespace) return false;
+      const pdbLabels: Record<string, string> = r.spec?.selector?.matchLabels ?? {};
+      // PDB selector must be a subset of deployment selector labels
+      return Object.entries(pdbLabels).every(([k, v]) => deployLabels[k] === v);
+    });
+
+    if (!hasPDB) {
+      return [{
+        rule: "MV6015",
+        severity: "info",
+        message: `Deployment "${resource.metadata.name}" has ${replicas} replicas but no matching PodDisruptionBudget.`,
+        resource: resourceId,
+        namespace: resource.metadata?.namespace,
+        path: "metadata.name",
+        fix: "Create a PodDisruptionBudget to protect this Deployment during node maintenance.",
+      }];
+    }
+
+    return [];
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV6 rules
 // ---------------------------------------------------------------------------
 export const mv6Rules: Rule[] = [
@@ -606,4 +650,5 @@ export const mv6Rules: Rule[] = [
   mv6012,
   mv6013,
   mv6014,
+  mv6015,
 ];

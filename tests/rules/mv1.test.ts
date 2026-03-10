@@ -1637,17 +1637,17 @@ spec:
 // Cross-cutting / integration tests
 // ============================================================================
 describe("MV1 rules - cross-cutting concerns", () => {
-  it("should export exactly 17 rules", () => {
-    expect(mv1Rules).toHaveLength(17);
+  it("should export exactly 18 rules", () => {
+    expect(mv1Rules).toHaveLength(18);
   });
 
   it("should have unique rule IDs", () => {
     const ids = mv1Rules.map((r) => r.id);
-    expect(new Set(ids).size).toBe(17);
+    expect(new Set(ids).size).toBe(18);
   });
 
-  it("should have IDs from MV1001 to MV1017", () => {
-    for (let i = 1; i <= 17; i++) {
+  it("should have IDs from MV1001 to MV1018", () => {
+    for (let i = 1; i <= 18; i++) {
       const id = `MV10${String(i).padStart(2, "0")}`;
       expect(mv1Rules.find((r) => r.id === id)).toBeDefined();
     }
@@ -1923,5 +1923,91 @@ spec:
 `;
     const violations = checkRule("MV1017", yaml);
     expect(violations).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// MV1018 - Container with stdin or tty enabled
+// ============================================================================
+describe("MV1018 - stdin/tty enabled", () => {
+  it("should flag container with stdin: true", () => {
+    const yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: stdin-pod
+spec:
+  containers:
+    - name: app
+      image: nginx
+      stdin: true
+`;
+    const violations = checkRule("MV1018", yaml);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV1018");
+    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].message).toContain("stdin");
+  });
+
+  it("should flag container with tty: true", () => {
+    const yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: tty-pod
+spec:
+  containers:
+    - name: app
+      image: nginx
+      tty: true
+`;
+    const violations = checkRule("MV1018", yaml);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV1018");
+    expect(violations[0].message).toContain("tty");
+  });
+
+  it("should produce exactly 1 violation per container when both stdin and tty are true", () => {
+    const yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: both-pod
+spec:
+  containers:
+    - name: app
+      image: nginx
+      stdin: true
+      tty: true
+`;
+    const violations = checkRule("MV1018", yaml);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain("stdin");
+    expect(violations[0].message).toContain("tty");
+  });
+
+  it("should pass when neither stdin nor tty is set", () => {
+    const violations = checkRule("MV1018", POD_BASE);
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should flag initContainer with stdin: true", () => {
+    const yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-stdin-pod
+spec:
+  initContainers:
+    - name: init
+      image: busybox
+      stdin: true
+  containers:
+    - name: app
+      image: nginx
+`;
+    const violations = checkRule("MV1018", yaml);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain("stdin");
   });
 });

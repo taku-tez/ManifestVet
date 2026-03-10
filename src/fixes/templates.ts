@@ -580,6 +580,48 @@ image: my-registry.example.com/nginx:1.25.3`,
       periodSeconds: 10`,
     safe: false,
   },
+
+  // ─── MV6015 ────────────────────────────────────────────────────────────
+  MV6015: {
+    ja: "PodDisruptionBudget を作成して、ノードメンテナンス中もDeploymentの可用性を維持してください。",
+    en: "Create a PodDisruptionBudget to maintain Deployment availability during voluntary disruptions such as node maintenance.",
+    patch: `apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: my-app-pdb
+spec:
+  minAvailable: 1   # または maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: my-app   # Deploymentのselectorと一致させる`,
+    safe: false,
+  },
+
+  // ─── MV3008 ────────────────────────────────────────────────────────────
+  MV3008: {
+    ja: "デフォルト拒否の NetworkPolicy を追加して、明示的に許可されていないトラフィックをすべてブロックしてください。",
+    en: "Add a default-deny NetworkPolicy to block all traffic not explicitly allowed.",
+    patch: `# デフォルト拒否 (ingress)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# デフォルト拒否 (egress)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress`,
+    safe: false,
+  },
 };
 
 export function getTemplate(ruleId: string): FixTemplate | undefined {

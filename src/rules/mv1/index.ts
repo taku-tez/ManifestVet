@@ -753,6 +753,39 @@ const mv1017: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV1018 - Container with stdin or tty enabled
+// ---------------------------------------------------------------------------
+const mv1018: Rule = {
+  id: "MV1018",
+  severity: "warning",
+  description: "Container should not have stdin or tty enabled. These allow interactive shell access which may be used for container escape or lateral movement.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (!isPodBearing(resource)) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const violations: Violation[] = [];
+
+    for (const { container, index, prefix } of getContainers(resource)) {
+      if (container.stdin === true || container.tty === true) {
+        const flags = [container.stdin && "stdin", container.tty && "tty"].filter(Boolean).join(" and ");
+        violations.push({
+          rule: "MV1018",
+          severity: "warning",
+          message: `Container "${container.name ?? index}" has ${flags} enabled, allowing interactive shell access.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: containerPath(resource, prefix, index, container.stdin ? "stdin" : "tty"),
+          fix: "Remove stdin and tty from the container spec unless interactive access is explicitly required.",
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV1 rules
 // ---------------------------------------------------------------------------
 export const mv1Rules: Rule[] = [
@@ -773,4 +806,5 @@ export const mv1Rules: Rule[] = [
   mv1015,
   mv1016,
   mv1017,
+  mv1018,
 ];

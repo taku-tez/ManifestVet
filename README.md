@@ -45,7 +45,7 @@ manifestvet --format sarif deployment.yaml   # SARIF 2.1 (for GitHub Code Scanni
 
 ## Rules
 
-53 rules across 6 categories:
+58 rules across 6 categories:
 
 | Prefix | Category | Count |
 |--------|----------|-------|

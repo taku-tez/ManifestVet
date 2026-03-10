@@ -1108,20 +1108,21 @@ roleRef:
 // Cross-cutting / integration tests
 // ============================================================================
 describe("MV2 rules - cross-cutting concerns", () => {
-  it("should export exactly 9 rules", () => {
-    expect(mv2Rules).toHaveLength(9);
+  it("should export exactly 10 rules", () => {
+    expect(mv2Rules).toHaveLength(10);
   });
 
   it("should have unique rule IDs", () => {
     const ids = mv2Rules.map((r) => r.id);
-    expect(new Set(ids).size).toBe(9);
+    expect(new Set(ids).size).toBe(10);
   });
 
-  it("should have IDs from MV2001 to MV2009", () => {
+  it("should have IDs from MV2001 to MV2010", () => {
     for (let i = 1; i <= 9; i++) {
       const id = `MV200${i}`;
       expect(mv2Rules.find((r) => r.id === id)).toBeDefined();
     }
+    expect(mv2Rules.find((r) => r.id === "MV2010")).toBeDefined();
   });
 
   it("should return no violations for a non-RBAC resource across all rules", () => {
@@ -1265,5 +1266,63 @@ subjects:
       });
       expect(violations).toHaveLength(0);
     }
+  });
+});
+
+// ============================================================================
+// MV2010 - ClusterRole grants read access to all resources
+// ============================================================================
+describe("MV2010 - ClusterRole grants read access to all resources", () => {
+  it("should flag ClusterRole with get/list/watch on wildcard resources", () => {
+    const yaml = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: read-all
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+`;
+    const { resources } = parseYAML(yaml);
+    const mv2010 = mv2Rules.find((r) => r.id === "MV2010")!;
+    const violations = mv2010.check({ resource: resources[0], allResources: resources });
+    expect(violations.length).toBeGreaterThan(0);
+    expect(violations[0].rule).toBe("MV2010");
+  });
+
+  it("should not flag ClusterRole with wildcard verbs but specific resources", () => {
+    const yaml = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pod-reader
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+`;
+    const { resources } = parseYAML(yaml);
+    const mv2010 = mv2Rules.find((r) => r.id === "MV2010")!;
+    const violations = mv2010.check({ resource: resources[0], allResources: resources });
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should not flag Role (only ClusterRole)", () => {
+    const yaml = `
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-all
+  namespace: default
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+`;
+    const { resources } = parseYAML(yaml);
+    const mv2010 = mv2Rules.find((r) => r.id === "MV2010")!;
+    const violations = mv2010.check({ resource: resources[0], allResources: resources });
+    expect(violations).toHaveLength(0);
   });
 });

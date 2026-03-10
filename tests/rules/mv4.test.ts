@@ -1204,3 +1204,77 @@ spec:
     expect(violations[0].rule).toBe("MV4006");
   });
 });
+
+// ============================================================================
+// MV4007 - Image uses implicit Docker Hub registry
+// ============================================================================
+describe("MV4007 - Image uses implicit Docker Hub registry", () => {
+  it("should flag a short image name without registry prefix", () => {
+    const violations = checkRule(
+      "MV4007",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: implicit-dockerhub
+spec:
+  containers:
+    - name: app
+      image: nginx:1.25
+`,
+    );
+    expect(violations.length).toBeGreaterThan(0);
+    expect(violations[0].rule).toBe("MV4007");
+  });
+
+  it("should flag an image with library/ prefix but no registry", () => {
+    const violations = checkRule(
+      "MV4007",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: library-image
+spec:
+  containers:
+    - name: app
+      image: library/ubuntu:22.04
+`,
+    );
+    expect(violations.length).toBeGreaterThan(0);
+  });
+
+  it("should not flag an image with explicit registry (gcr.io)", () => {
+    const violations = checkRule(
+      "MV4007",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gcr-image
+spec:
+  containers:
+    - name: app
+      image: gcr.io/google-containers/pause:3.9
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should not flag an image with explicit docker.io registry", () => {
+    const violations = checkRule(
+      "MV4007",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: explicit-dockerhub
+spec:
+  containers:
+    - name: app
+      image: docker.io/library/nginx:1.25
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+});

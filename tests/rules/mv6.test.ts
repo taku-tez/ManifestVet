@@ -1685,3 +1685,183 @@ spec:
     expect(violations[0].namespace).toBe("production");
   });
 });
+
+// ============================================================================
+// MV6011 - Container terminationMessagePolicy not FallbackToLogsOnError
+// ============================================================================
+describe("MV6011 - Container terminationMessagePolicy", () => {
+  it("should flag container without terminationMessagePolicy", () => {
+    const violations = checkRule(
+      "MV6011",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: no-term-policy
+spec:
+  containers:
+    - name: app
+      image: myapp:1.0
+`,
+    );
+    expect(violations.length).toBeGreaterThan(0);
+    expect(violations[0].rule).toBe("MV6011");
+  });
+
+  it("should not flag container with FallbackToLogsOnError", () => {
+    const violations = checkRule(
+      "MV6011",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: good-term-policy
+spec:
+  containers:
+    - name: app
+      image: myapp:1.0
+      terminationMessagePolicy: FallbackToLogsOnError
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// MV6012 - Deployment revisionHistoryLimit not set or too large
+// ============================================================================
+describe("MV6012 - Deployment revisionHistoryLimit", () => {
+  it("should flag Deployment without revisionHistoryLimit", () => {
+    const violations = checkRule(
+      "MV6012",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-history-limit
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+`,
+    );
+    expect(violations.length).toBeGreaterThan(0);
+    expect(violations[0].rule).toBe("MV6012");
+  });
+
+  it("should not flag Deployment with revisionHistoryLimit <= 10", () => {
+    const violations = checkRule(
+      "MV6012",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: limited-history
+spec:
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// MV6013 - StatefulSet missing podManagementPolicy: Parallel
+// ============================================================================
+describe("MV6013 - StatefulSet podManagementPolicy", () => {
+  it("should flag StatefulSet without podManagementPolicy", () => {
+    const violations = checkRule(
+      "MV6013",
+      `
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: no-policy
+spec:
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: postgres:15
+`,
+    );
+    expect(violations.length).toBeGreaterThan(0);
+    expect(violations[0].rule).toBe("MV6013");
+  });
+
+  it("should not flag StatefulSet with Parallel podManagementPolicy", () => {
+    const violations = checkRule(
+      "MV6013",
+      `
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: parallel-policy
+spec:
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: db
+          image: postgres:15
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should not flag Deployment", () => {
+    const violations = checkRule(
+      "MV6013",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-deploy
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+});

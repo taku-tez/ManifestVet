@@ -455,6 +455,107 @@ const mv6010: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV6011 - Container terminationMessagePolicy not FallbackToLogsOnError
+// ---------------------------------------------------------------------------
+const mv6011: Rule = {
+  id: "MV6011",
+  severity: "info",
+  description:
+    'Containers should set terminationMessagePolicy to "FallbackToLogsOnError" to ensure useful termination messages are available even when the container does not write to the termination message file.',
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (!isPodBearing(resource)) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const violations: Violation[] = [];
+
+    for (const { container, index, prefix } of getContainers(resource)) {
+      const policy = container.terminationMessagePolicy;
+      if (policy !== "FallbackToLogsOnError") {
+        violations.push({
+          rule: "MV6011",
+          severity: "info",
+          message: `Container "${container.name ?? index}" in ${resourceId} does not set terminationMessagePolicy to "FallbackToLogsOnError" (current: ${policy ?? "not set"}).`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: containerPath(resource, prefix, index, "terminationMessagePolicy"),
+          fix: 'Set terminationMessagePolicy: FallbackToLogsOnError to get log output as the termination message when the termination message file is empty.',
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// MV6012 - Deployment revisionHistoryLimit not set or too large
+// ---------------------------------------------------------------------------
+const mv6012: Rule = {
+  id: "MV6012",
+  severity: "info",
+  description:
+    "Deployment should set revisionHistoryLimit to a reasonable value to control the number of old ReplicaSets retained. Keeping too many (default is 10) wastes etcd storage.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (resource.kind !== "Deployment") return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const limit = resource.spec?.revisionHistoryLimit;
+
+    if (limit === undefined || limit === null || limit > 10) {
+      return [
+        {
+          rule: "MV6012",
+          severity: "info",
+          message: `Deployment "${resource.metadata.name}" has revisionHistoryLimit set to ${limit ?? "default (10)"}. Consider setting it to 3–5 to reduce etcd overhead.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: "spec.revisionHistoryLimit",
+          fix: "Set spec.revisionHistoryLimit to 3 or 5 to limit the number of retained old ReplicaSets.",
+        },
+      ];
+    }
+
+    return [];
+  },
+};
+
+// ---------------------------------------------------------------------------
+// MV6013 - StatefulSet missing podManagementPolicy: Parallel
+// ---------------------------------------------------------------------------
+const mv6013: Rule = {
+  id: "MV6013",
+  severity: "info",
+  description:
+    'StatefulSet uses the default sequential pod management policy. Setting podManagementPolicy to "Parallel" can significantly reduce startup time when scaling or updating, unless strict ordering is required.',
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (resource.kind !== "StatefulSet") return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const policy = resource.spec?.podManagementPolicy;
+
+    // Only flag if it's explicitly OrderedReady or not set (default = OrderedReady)
+    if (!policy || policy === "OrderedReady") {
+      return [
+        {
+          rule: "MV6013",
+          severity: "info",
+          message: `StatefulSet "${resource.metadata.name}" uses podManagementPolicy "${policy ?? "OrderedReady (default)"}". Consider "Parallel" if pod ordering is not required.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: "spec.podManagementPolicy",
+          fix: 'Set spec.podManagementPolicy: Parallel to allow pods to start and stop simultaneously, reducing scale-up time.',
+        },
+      ];
+    }
+
+    return [];
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV6 rules
 // ---------------------------------------------------------------------------
 export const mv6Rules: Rule[] = [
@@ -468,4 +569,7 @@ export const mv6Rules: Rule[] = [
   mv6008,
   mv6009,
   mv6010,
+  mv6011,
+  mv6012,
+  mv6013,
 ];

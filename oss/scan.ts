@@ -130,6 +130,16 @@ function writeCache(name: string, files: { path: string; content: string }[]): v
   fs.writeFileSync(cacheKey(name), JSON.stringify(files));
 }
 
+// ── Helm / non-K8s filter ────────────────────────────────────────────────────
+
+/**
+ * Returns true if the YAML content is a Helm template (contains {{ }}) or
+ * is otherwise not parseable as a K8s manifest.
+ */
+function isHelmTemplate(content: string): boolean {
+  return /\{\{[-\s]/.test(content) || /\{\{-?\s*\.\w/.test(content);
+}
+
 // ── Manifest fetcher ──────────────────────────────────────────────────────────
 
 async function fetchManifests(
@@ -161,7 +171,7 @@ async function fetchManifests(
         entry.download_url
       ) {
         const content = await fetchRaw(entry.download_url);
-        if (content) {
+        if (content && !isHelmTemplate(content)) {
           results.push({ path: entry.path, content });
         }
         await sleep(50);

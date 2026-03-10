@@ -363,6 +363,45 @@ const mv4006: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV4007 - Image uses a deprecated/insecure registry (docker.io without digest)
+// ---------------------------------------------------------------------------
+const mv4007: Rule = {
+  id: "MV4007",
+  severity: "info",
+  description:
+    "Container images without a registry prefix default to Docker Hub (docker.io). Explicitly specifying the full registry path and using a private or mirrored registry is recommended for production workloads.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (!isPodBearing(resource)) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const violations: Violation[] = [];
+
+    for (const { container, index, prefix } of getContainers(resource)) {
+      const image: string = container.image ?? "";
+      // Image without a '/' or with no registry prefix (no dot or colon before first slash)
+      if (!image) continue;
+      const parts = image.split("/");
+      const firstPart = parts[0];
+      // If the first part has no dot and no colon (port), it's a Docker Hub short form
+      if (parts.length === 1 || (!firstPart.includes(".") && !firstPart.includes(":"))) {
+        violations.push({
+          rule: "MV4007",
+          severity: "info",
+          message: `Container "${container.name ?? index}" image "${image}" uses the implicit Docker Hub registry. Explicitly specify the full registry URL (e.g. docker.io/${image}) or use a private/mirrored registry.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: containerPath(resource, prefix, index, "image"),
+          fix: `Prefix the image with the full registry URL, e.g. "docker.io/${image}", or switch to a private registry.`,
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV4 rules
 // ---------------------------------------------------------------------------
 export const mv4Rules: Rule[] = [
@@ -372,4 +411,5 @@ export const mv4Rules: Rule[] = [
   mv4004,
   mv4005,
   mv4006,
+  mv4007,
 ];

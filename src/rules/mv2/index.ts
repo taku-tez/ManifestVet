@@ -346,6 +346,49 @@ const mv2009: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV2010 - ClusterRole grants read access to all resources (get/list/watch on *)
+// ---------------------------------------------------------------------------
+const mv2010: Rule = {
+  id: "MV2010",
+  severity: "warning",
+  description:
+    "ClusterRole grants get/list/watch on all resources (*). This provides broad read access to sensitive data across the entire cluster (Secrets, ConfigMaps, etc.) and violates least-privilege.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (resource.kind !== "ClusterRole") return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const violations: Violation[] = [];
+    const rules: any[] = resource.rules ?? [];
+
+    const readVerbs = new Set(["get", "list", "watch"]);
+
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      const resources: string[] = rule.resources ?? [];
+      const verbs: string[] = rule.verbs ?? [];
+
+      if (
+        resources.includes("*") &&
+        readVerbs.size === [...readVerbs].filter(v => verbs.includes(v) || verbs.includes("*")).length
+      ) {
+        violations.push({
+          rule: "MV2010",
+          severity: "warning",
+          message: `ClusterRole "${resource.metadata.name}" grants ${verbs.filter(v => readVerbs.has(v) || v === "*").join("/")} on all resources (*) in rules[${i}].`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: `rules[${i}].resources`,
+          fix: "Replace the wildcard resource (*) with an explicit list of resources that this role actually needs to read.",
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV2 rules
 // ---------------------------------------------------------------------------
 export const mv2Rules: Rule[] = [
@@ -358,4 +401,5 @@ export const mv2Rules: Rule[] = [
   mv2007,
   mv2008,
   mv2009,
+  mv2010,
 ];

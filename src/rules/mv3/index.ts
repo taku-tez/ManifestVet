@@ -165,7 +165,7 @@ const mv3003: Rule = {
   id: "MV3003",
   severity: "error",
   description:
-    "NetworkPolicy should not allow all ingress traffic. An ingress rule with an empty from array or from containing an empty object permits traffic from any source.",
+    "NetworkPolicy should not allow all ingress traffic. Per Kubernetes semantics, an ingress rule with no from field, an empty from array, or a from containing an empty object permits traffic from any source.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
     if (resource.kind !== "NetworkPolicy") return [];
@@ -178,8 +178,18 @@ const mv3003: Rule = {
       const rule = ingressRules[i];
       const from: any[] | undefined = rule.from;
 
+      // Per K8s API: "If this field is not provided, this rule matches all sources."
+      // An ingress rule without a from field allows all traffic.
       if (from === undefined) {
-        // No from field at all - this is not the same as empty from; skip.
+        violations.push({
+          rule: "MV3003",
+          severity: "error",
+          message: `${resourceId} allows all ingress traffic in spec.ingress[${i}] (no from field — matches all sources per Kubernetes NetworkPolicy semantics).`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: `spec.ingress[${i}]`,
+          fix: "Add a from field with explicit source selectors (podSelector, namespaceSelector, ipBlock) to restrict ingress traffic.",
+        });
         continue;
       }
 
@@ -222,7 +232,7 @@ const mv3004: Rule = {
   id: "MV3004",
   severity: "error",
   description:
-    "NetworkPolicy should not allow all egress traffic. An egress rule with an empty to array or to containing an empty object permits traffic to any destination.",
+    "NetworkPolicy should not allow all egress traffic. Per Kubernetes semantics, an egress rule with no to field, an empty to array, or a to containing an empty object permits traffic to any destination.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
     if (resource.kind !== "NetworkPolicy") return [];
@@ -235,7 +245,18 @@ const mv3004: Rule = {
       const rule = egressRules[i];
       const to: any[] | undefined = rule.to;
 
+      // Per K8s API: "If this field is not provided, this rule matches all destinations."
+      // An egress rule without a to field allows all traffic.
       if (to === undefined) {
+        violations.push({
+          rule: "MV3004",
+          severity: "error",
+          message: `${resourceId} allows all egress traffic in spec.egress[${i}] (no to field — matches all destinations per Kubernetes NetworkPolicy semantics).`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: `spec.egress[${i}]`,
+          fix: "Add a to field with explicit destination selectors (podSelector, namespaceSelector, ipBlock) to restrict egress traffic.",
+        });
         continue;
       }
 

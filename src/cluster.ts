@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+import * as yaml from "js-yaml";
 
 export interface ClusterOptions {
   context?: string;
@@ -52,6 +53,39 @@ function buildArgs(baseArgs: string[], opts: ClusterOptions): string[] {
   return args;
 }
 
+/**
+ * `kubectl get <kind> -o yaml` always returns a List object when fetching
+ * multiple resources. Unwrap the items and return each as an individual
+ * YAML document so the parser never sees a bare `kind: List` object.
+ */
+function unwrapList(raw: string, basePath: string): { path: string; content: string }[] {
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "{}") return [];
+
+  let parsed: unknown;
+  try {
+    parsed = yaml.load(trimmed);
+  } catch {
+    // Not valid YAML — return as-is and let the parser report the error
+    return [{ path: basePath, content: raw }];
+  }
+
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    (parsed as Record<string, unknown>).kind === "List"
+  ) {
+    const items = (parsed as Record<string, unknown>).items;
+    if (!Array.isArray(items) || items.length === 0) return [];
+    return items.map((item, i) => ({
+      path: `${basePath}[${i}]`,
+      content: yaml.dump(item),
+    }));
+  }
+
+  return [{ path: basePath, content: raw }];
+}
+
 export async function fetchManifestsFromCluster(
   opts: ClusterOptions
 ): Promise<{ path: string; content: string }[]> {
@@ -77,13 +111,9 @@ export async function fetchManifestsFromCluster(
         ["get", kind, "-o", "yaml", "--ignore-not-found"],
         opts
       );
-      const content = kubectl(args);
-      if (content && content.trim() && content.trim() !== "{}") {
-        results.push({
-          path: `cluster://${clusterLabel}/${nsLabel}/${kind}`,
-          content,
-        });
-      }
+      const raw = kubectl(args);
+      const basePath = `cluster://${clusterLabel}/${nsLabel}/${kind}`;
+      results.push(...unwrapList(raw, basePath));
     } catch (err) {
       // Some kinds may not exist in this cluster version; continue
     }
@@ -95,13 +125,9 @@ export async function fetchManifestsFromCluster(
       if (opts.context) {
         args.push("--context", opts.context);
       }
-      const content = kubectl(args);
-      if (content && content.trim() && content.trim() !== "{}") {
-        results.push({
-          path: `cluster://${clusterLabel}/${kind}`,
-          content,
-        });
-      }
+      const raw = kubectl(args);
+      const basePath = `cluster://${clusterLabel}/${kind}`;
+      results.push(...unwrapList(raw, basePath));
     } catch (err) {
       // continue
     }

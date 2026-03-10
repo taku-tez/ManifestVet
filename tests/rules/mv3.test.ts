@@ -404,7 +404,7 @@ spec:
     expect(violations).toHaveLength(0);
   });
 
-  it("should pass when ingress rule has no from field (undefined)", () => {
+  it("should flag ingress rule with no from field (allows all sources per K8s semantics)", () => {
     const violations = checkRule(
       "MV3003",
       `
@@ -422,7 +422,10 @@ spec:
     - Ingress
 `,
     );
-    expect(violations).toHaveLength(0);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV3003");
+    expect(violations[0].path).toBe("spec.ingress[0]");
+    expect(violations[0].message).toContain("no from field");
   });
 
   it("should not flag non-NetworkPolicy resources", () => {
@@ -559,7 +562,7 @@ spec:
     expect(violations).toHaveLength(0);
   });
 
-  it("should pass when egress rule has no to field (undefined)", () => {
+  it("should flag egress rule with no to field (allows all destinations per K8s semantics)", () => {
     const violations = checkRule(
       "MV3004",
       `
@@ -577,7 +580,10 @@ spec:
     - Egress
 `,
     );
-    expect(violations).toHaveLength(0);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV3004");
+    expect(violations[0].path).toBe("spec.egress[0]");
+    expect(violations[0].message).toContain("no to field");
   });
 
   it("should not flag non-NetworkPolicy resources", () => {

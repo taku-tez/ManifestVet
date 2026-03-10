@@ -40,14 +40,14 @@ describe("Fix templates", () => {
   });
 
   it("has a template for every MV6xxx rule", () => {
-    for (let i = 1; i <= 15; i++) {
+    for (let i = 1; i <= 16; i++) {
       const r = i < 10 ? `MV600${i}` : `MV60${i}`;
       expect(FIX_TEMPLATES[r], `missing template for ${r}`).toBeDefined();
     }
   });
 
-  it("covers all 62 rules", () => {
-    expect(Object.keys(FIX_TEMPLATES)).toHaveLength(62);
+  it("covers all 63 rules", () => {
+    expect(Object.keys(FIX_TEMPLATES)).toHaveLength(63);
   });
 
   it("each template has ja, en, patch, and safe fields", () => {

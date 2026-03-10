@@ -622,6 +622,26 @@ spec:
     - Egress`,
     safe: false,
   },
+
+  // ─── MV6016 ────────────────────────────────────────────────────────────
+  MV6016: {
+    ja: "廃止された Kubernetes API バージョンを使用しています。クラスタのアップグレード時にこのマニフェストが適用できなくなります。正しい API バージョンに更新してください。",
+    en: "This resource uses a removed Kubernetes API version. It will fail to apply on newer clusters. Update apiVersion to the current stable version.",
+    patch: `# 例: extensions/v1beta1 → apps/v1 (Kubernetes 1.16+)
+apiVersion: apps/v1
+kind: Deployment
+# ...
+---
+# 例: batch/v1beta1 → batch/v1 (Kubernetes 1.25+)
+apiVersion: batch/v1
+kind: CronJob
+# ...
+---
+# 例: networking.k8s.io/v1beta1 → networking.k8s.io/v1 (Kubernetes 1.22+)
+apiVersion: networking.k8s.io/v1
+kind: Ingress`,
+    safe: false,
+  },
 };
 
 export function getTemplate(ruleId: string): FixTemplate | undefined {

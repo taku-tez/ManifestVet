@@ -633,6 +633,71 @@ const mv6015: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV6016 - Deprecated Kubernetes API version
+// ---------------------------------------------------------------------------
+
+interface DeprecatedAPI {
+  apiVersion: string;
+  removedIn: string;
+  replacement: string;
+}
+
+const DEPRECATED_APIS: DeprecatedAPI[] = [
+  // Removed in Kubernetes 1.16
+  { apiVersion: "extensions/v1beta1",   removedIn: "1.16", replacement: "apps/v1 (or networking.k8s.io/v1 for Ingress/NetworkPolicy)" },
+  { apiVersion: "apps/v1beta1",         removedIn: "1.16", replacement: "apps/v1" },
+  { apiVersion: "apps/v1beta2",         removedIn: "1.16", replacement: "apps/v1" },
+  // Removed in Kubernetes 1.22
+  { apiVersion: "networking.k8s.io/v1beta1",              removedIn: "1.22", replacement: "networking.k8s.io/v1" },
+  { apiVersion: "rbac.authorization.k8s.io/v1beta1",      removedIn: "1.22", replacement: "rbac.authorization.k8s.io/v1" },
+  { apiVersion: "storage.k8s.io/v1beta1",                 removedIn: "1.22", replacement: "storage.k8s.io/v1" },
+  { apiVersion: "apiextensions.k8s.io/v1beta1",           removedIn: "1.22", replacement: "apiextensions.k8s.io/v1" },
+  { apiVersion: "certificates.k8s.io/v1beta1",            removedIn: "1.22", replacement: "certificates.k8s.io/v1" },
+  { apiVersion: "scheduling.k8s.io/v1beta1",              removedIn: "1.22", replacement: "scheduling.k8s.io/v1" },
+  { apiVersion: "coordination.k8s.io/v1beta1",            removedIn: "1.22", replacement: "coordination.k8s.io/v1" },
+  // Removed in Kubernetes 1.25
+  { apiVersion: "batch/v1beta1",        removedIn: "1.25", replacement: "batch/v1" },
+  { apiVersion: "policy/v1beta1",       removedIn: "1.25", replacement: "policy/v1 (or Pod Security Admission for PSP)" },
+  { apiVersion: "events.k8s.io/v1beta1",    removedIn: "1.25", replacement: "events.k8s.io/v1" },
+  { apiVersion: "discovery.k8s.io/v1beta1", removedIn: "1.25", replacement: "discovery.k8s.io/v1" },
+  // Removed in Kubernetes 1.26
+  { apiVersion: "autoscaling/v2beta1",  removedIn: "1.26", replacement: "autoscaling/v2" },
+  { apiVersion: "autoscaling/v2beta2",  removedIn: "1.26", replacement: "autoscaling/v2" },
+  // Removed in Kubernetes 1.27
+  { apiVersion: "storage.k8s.io/v1beta1", removedIn: "1.27", replacement: "storage.k8s.io/v1" },
+];
+
+const DEPRECATED_API_MAP = new Map(DEPRECATED_APIS.map((d) => [d.apiVersion, d]));
+
+const mv6016: Rule = {
+  id: "MV6016",
+  severity: "error",
+  description:
+    "Resource uses a deprecated and removed Kubernetes API version. Manifests using removed APIs will fail on newer clusters.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    const apiVersion = resource.apiVersion as string | undefined;
+    if (!apiVersion) return [];
+
+    const deprecated = DEPRECATED_API_MAP.get(apiVersion);
+    if (!deprecated) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata?.name ?? "unknown"}`;
+    return [
+      {
+        rule: "MV6016",
+        severity: "error",
+        message: `${resourceId} uses deprecated apiVersion "${apiVersion}" (removed in Kubernetes ${deprecated.removedIn}). Migrate to ${deprecated.replacement}.`,
+        resource: resourceId,
+        namespace: resource.metadata?.namespace,
+        path: "apiVersion",
+        fix: `Update apiVersion from "${apiVersion}" to "${deprecated.replacement}".`,
+      },
+    ];
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV6 rules
 // ---------------------------------------------------------------------------
 export const mv6Rules: Rule[] = [
@@ -651,4 +716,5 @@ export const mv6Rules: Rule[] = [
   mv6013,
   mv6014,
   mv6015,
+  mv6016,
 ];

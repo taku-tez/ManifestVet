@@ -2145,3 +2145,140 @@ spec:
     expect(violations[0].message).toContain("my-app");
   });
 });
+
+// ============================================================================
+// MV6016 - Deprecated Kubernetes API version
+// ============================================================================
+describe("MV6016 - Deprecated API version", () => {
+  it("should flag extensions/v1beta1 Deployment (removed in 1.16)", () => {
+    const violations = checkRule(
+      "MV6016",
+      `
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: old-deploy
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: app
+          image: nginx
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV6016");
+    expect(violations[0].severity).toBe("error");
+    expect(violations[0].message).toContain("extensions/v1beta1");
+    expect(violations[0].message).toContain("1.16");
+    expect(violations[0].path).toBe("apiVersion");
+  });
+
+  it("should flag batch/v1beta1 CronJob (removed in 1.25)", () => {
+    const violations = checkRule(
+      "MV6016",
+      `
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: old-cron
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: job
+              image: busybox
+          restartPolicy: OnFailure
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain("batch/v1beta1");
+    expect(violations[0].message).toContain("1.25");
+    expect(violations[0].message).toContain("batch/v1");
+  });
+
+  it("should flag policy/v1beta1 PodDisruptionBudget (removed in 1.25)", () => {
+    const violations = checkRule(
+      "MV6016",
+      `
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: old-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: myapp
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain("policy/v1beta1");
+  });
+
+  it("should flag autoscaling/v2beta2 HPA (removed in 1.26)", () => {
+    const violations = checkRule(
+      "MV6016",
+      `
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: old-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  minReplicas: 1
+  maxReplicas: 10
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain("autoscaling/v2beta2");
+    expect(violations[0].message).toContain("1.26");
+  });
+
+  it("should pass for current stable API versions", () => {
+    const v1 = checkRule("MV6016", `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modern-deploy
+spec:
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+        - name: app
+          image: nginx
+`);
+    expect(v1).toHaveLength(0);
+
+    const v2 = checkRule("MV6016", `
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: modern-cron
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: job
+              image: busybox
+          restartPolicy: OnFailure
+`);
+    expect(v2).toHaveLength(0);
+  });
+});

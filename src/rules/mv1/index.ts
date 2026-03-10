@@ -707,11 +707,11 @@ const mv1016: Rule = {
         {
           rule: "MV1016",
           severity: "warning",
-          message: `${resourceId} does not explicitly set automountServiceAccountToken to false.`,
+          message: `${resourceId} does not set automountServiceAccountToken: false on the pod spec. The service account token will be auto-mounted even if the pod does not use it (also check MV2005 to disable at the ServiceAccount level).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
           path: podSpecPath(resource, "automountServiceAccountToken"),
-          fix: "Set automountServiceAccountToken to false unless the token is required.",
+          fix: "Set automountServiceAccountToken: false on the pod spec to prevent token mounting for this workload, or set it on the ServiceAccount (MV2005) to disable it for all pods using that SA.",
         },
       ];
     }

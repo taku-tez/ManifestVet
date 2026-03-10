@@ -11,9 +11,19 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "oss:scan": "ts-node --project tsconfig.scripts.json oss/scan.ts",
+    "oss:analyze": "ts-node --project tsconfig.scripts.json oss/analyze.ts",
+    "oss:scan:compare": "ts-node --project tsconfig.scripts.json oss/scan.ts && ts-node --project tsconfig.scripts.json oss/analyze.ts --compare",
+    "oss:report": "ts-node --project tsconfig.scripts.json oss/analyze.ts"
   },
-  "keywords": ["kubernetes", "security", "linter", "k8s", "manifest"],
+  "keywords": [
+    "kubernetes",
+    "security",
+    "linter",
+    "k8s",
+    "manifest"
+  ],
   "license": "MIT",
   "dependencies": {
     "js-yaml": "^4.1.0"
@@ -21,6 +31,7 @@
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "vitest": "^1.2.0"
   }

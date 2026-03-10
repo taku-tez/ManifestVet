@@ -1,0 +1,119 @@
+name: OSS Continuous Scan
+
+on:
+  schedule:
+    # 毎週月曜 09:00 JST (00:00 UTC)
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Comma-separated project names to scan (empty = all)"
+        required: false
+        default: ""
+      no_cache:
+        description: "Skip cache and re-fetch all manifests"
+        type: boolean
+        default: false
+
+jobs:
+  scan:
+    name: Scan OSS Kubernetes manifests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run OSS scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.only }}" ]; then
+            ARGS="--only=${{ github.event.inputs.only }}"
+          fi
+          if [ "${{ github.event.inputs.no_cache }}" = "true" ]; then
+            ARGS="$ARGS --no-cache"
+          fi
+          npm run oss:scan -- $ARGS
+
+      - name: Run analysis
+        run: npm run oss:analyze -- --compare
+
+      - name: Upload scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: oss-scan-results-${{ github.run_number }}
+          path: |
+            oss/results/latest.json
+            oss/results/analysis.json
+            oss/results/analysis.md
+            oss/analysis.md
+          retention-days: 90
+
+      - name: Commit analysis.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add oss/analysis.md
+          git diff --cached --quiet || git commit -m "chore: update OSS scan analysis [skip ci]"
+          git push
+
+      - name: Check for regressions
+        id: regression
+        run: |
+          PREV_COUNT=$(git show HEAD~1:oss/analysis.md 2>/dev/null | grep "Total violations" | grep -oP '\d+' | head -1 || echo "0")
+          CURR_COUNT=$(grep "Total violations" oss/analysis.md | grep -oP '\d+' | head -1 || echo "0")
+          DELTA=$((CURR_COUNT - PREV_COUNT))
+          echo "prev=$PREV_COUNT" >> $GITHUB_OUTPUT
+          echo "curr=$CURR_COUNT" >> $GITHUB_OUTPUT
+          echo "delta=$DELTA" >> $GITHUB_OUTPUT
+          if [ "$DELTA" -gt "50" ]; then
+            echo "regression=true" >> $GITHUB_OUTPUT
+          else
+            echo "regression=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Open regression issue
+        if: steps.regression.outputs.regression == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prev  = ${{ steps.regression.outputs.prev }};
+            const curr  = ${{ steps.regression.outputs.curr }};
+            const delta = ${{ steps.regression.outputs.delta }};
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              title: `⚠️ OSS Scan Regression: violations increased by ${delta}`,
+              body: [
+                `## OSS Scan Regression Detected`,
+                ``,
+                `| Metric | Value |`,
+                `|--------|-------|`,
+                `| Previous violations | ${prev} |`,
+                `| Current violations  | ${curr} |`,
+                `| Delta               | +${delta} |`,
+                ``,
+                `This may indicate a new rule was added, an existing rule was made stricter,`,
+                `or a genuine increase in violations in the scanned OSS projects.`,
+                ``,
+                `Please review the [latest analysis](../../blob/main/oss/analysis.md) and`,
+                `the [scan artifact](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`,
+                ``,
+                `cc @maintainers`,
+              ].join('\n'),
+              labels: ['oss-scan', 'regression'],
+            });

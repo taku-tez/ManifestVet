@@ -133,11 +133,35 @@ function writeCache(name: string, files: { path: string; content: string }[]): v
 // ── Helm / non-K8s filter ────────────────────────────────────────────────────
 
 /**
- * Returns true if the YAML content is a Helm template (contains {{ }}) or
- * is otherwise not parseable as a K8s manifest.
+ * Returns true if the YAML content is a template file (Helm, ytt/Carvel, Kustomize
+ * variable files, etc.) or is otherwise not parseable as a plain K8s manifest.
+ *
+ * Helm (Go template) patterns:
+ *   {{ .Values  {{- .Release  (Go template expressions with dot accessor)
+ *   {{ if       {{ range      {{ define  {{ template  {{ block  {{ with  {{ end
+ *   {{-         (trim-whitespace modifier)
+ *   {{ "string" (quoted string expression)
+ *
+ * ytt/Carvel patterns:
+ *   #@overlay/match  #@ if/for/def  #@data/values  (ytt directives)
+ *   #@yaml/text-templated-strings  (ytt annotation)
+ *
+ * Also skips files with no `kind:` field (Chart.yaml, values.yaml, etc.)
  */
 function isHelmTemplate(content: string): boolean {
-  return /\{\{[-\s]/.test(content) || /\{\{-?\s*\.\w/.test(content);
+  // Go template action patterns
+  if (/\{\{-?\s*\.\w/.test(content)) return true;             // {{ .Values, {{- .Release
+  if (/\{\{[-\s]/.test(content)) return true;                 // {{- or {{ (space)
+  if (/\{\{[a-zA-Z]/.test(content)) return true;              // {{if, {{range, {{define, etc.
+  if (/\{\{\s*"/.test(content)) return true;                  // {{ "string"
+
+  // ytt/Carvel directives — lines starting with #@ (may have leading whitespace)
+  if (/^\s*#@/.test(content)) return true;                    // #@overlay/match, #@ if, #@data/values
+
+  // Files without a `kind:` field are not K8s manifests (Chart.yaml, values.yaml, etc.)
+  if (!/^kind:\s*\S/m.test(content)) return true;
+
+  return false;
 }
 
 // ── Manifest fetcher ──────────────────────────────────────────────────────────

@@ -556,6 +556,39 @@ const mv6013: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV6014 - Container with livenessProbe but no startupProbe
+// ---------------------------------------------------------------------------
+const mv6014: Rule = {
+  id: "MV6014",
+  severity: "info",
+  description:
+    "Container defines a livenessProbe but no startupProbe. Without a startupProbe, Kubernetes uses the livenessProbe during startup, which may kill a slow-starting container before it is ready.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (!isPodBearing(resource)) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const violations: Violation[] = [];
+
+    for (const { container, index, prefix } of getContainers(resource)) {
+      if (container.livenessProbe && !container.startupProbe) {
+        violations.push({
+          rule: "MV6014",
+          severity: "info",
+          message: `Container "${container.name ?? index}" has a livenessProbe but no startupProbe. Add a startupProbe to protect slow-starting containers from premature restarts.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: containerPath(resource, prefix, index, "startupProbe"),
+          fix: "Add a startupProbe with an appropriate failureThreshold and periodSeconds to give the container time to start.",
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV6 rules
 // ---------------------------------------------------------------------------
 export const mv6Rules: Rule[] = [
@@ -572,4 +605,5 @@ export const mv6Rules: Rule[] = [
   mv6011,
   mv6012,
   mv6013,
+  mv6014,
 ];

@@ -5,7 +5,7 @@ describe("Fix templates", () => {
   it("has a template for every MV1xxx rule", () => {
     const mv1Rules = ["MV1001","MV1002","MV1003","MV1004","MV1005","MV1006",
       "MV1007","MV1008","MV1009","MV1010","MV1011","MV1012",
-      "MV1013","MV1014","MV1015","MV1016"];
+      "MV1013","MV1014","MV1015","MV1016","MV1017"];
     for (const r of mv1Rules) {
       expect(FIX_TEMPLATES[r], `missing template for ${r}`).toBeDefined();
     }
@@ -40,14 +40,14 @@ describe("Fix templates", () => {
   });
 
   it("has a template for every MV6xxx rule", () => {
-    for (let i = 1; i <= 10; i++) {
-      const r = i < 10 ? `MV600${i}` : `MV6010`;
+    for (let i = 1; i <= 14; i++) {
+      const r = i < 10 ? `MV600${i}` : `MV60${i}`;
       expect(FIX_TEMPLATES[r], `missing template for ${r}`).toBeDefined();
     }
   });
 
-  it("covers all 53 rules", () => {
-    expect(Object.keys(FIX_TEMPLATES)).toHaveLength(53);
+  it("covers all 60 rules", () => {
+    expect(Object.keys(FIX_TEMPLATES)).toHaveLength(60);
   });
 
   it("each template has ja, en, patch, and safe fields", () => {

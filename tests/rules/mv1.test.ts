@@ -1504,8 +1504,34 @@ spec:
     expect(violations).toHaveLength(0);
   });
 
-  it("should pass when serviceAccountName is not set", () => {
+  it("should flag when serviceAccountName is not set (implicit default SA with token mounted)", () => {
     const violations = checkRule("MV1015", DEPLOYMENT_BASE);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV1015");
+    expect(violations[0].message).toContain("implicitly");
+  });
+
+  it("should pass when serviceAccountName not set but automountServiceAccountToken is false", () => {
+    const yaml = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: nginx:1.0
+`;
+    const violations = checkRule("MV1015", yaml);
     expect(violations).toHaveLength(0);
   });
 
@@ -1611,17 +1637,17 @@ spec:
 // Cross-cutting / integration tests
 // ============================================================================
 describe("MV1 rules - cross-cutting concerns", () => {
-  it("should export exactly 16 rules", () => {
-    expect(mv1Rules).toHaveLength(16);
+  it("should export exactly 17 rules", () => {
+    expect(mv1Rules).toHaveLength(17);
   });
 
   it("should have unique rule IDs", () => {
     const ids = mv1Rules.map((r) => r.id);
-    expect(new Set(ids).size).toBe(16);
+    expect(new Set(ids).size).toBe(17);
   });
 
-  it("should have IDs from MV1001 to MV1016", () => {
-    for (let i = 1; i <= 16; i++) {
+  it("should have IDs from MV1001 to MV1017", () => {
+    for (let i = 1; i <= 17; i++) {
       const id = `MV10${String(i).padStart(2, "0")}`;
       expect(mv1Rules.find((r) => r.id === id)).toBeDefined();
     }
@@ -1827,5 +1853,75 @@ spec:
     const violations = checkRule("MV1003", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].resource).toBe("ReplicaSet/test-rs");
+  });
+});
+
+// ============================================================================
+// MV1017 - shareProcessNamespace enabled
+// ============================================================================
+describe("MV1017 - shareProcessNamespace", () => {
+  it("should flag Pod with shareProcessNamespace: true", () => {
+    const yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shared-pid-pod
+spec:
+  shareProcessNamespace: true
+  containers:
+    - name: app
+      image: nginx
+`;
+    const violations = checkRule("MV1017", yaml);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV1017");
+    expect(violations[0].resource).toBe("Pod/shared-pid-pod");
+    expect(violations[0].severity).toBe("warning");
+  });
+
+  it("should flag Deployment with shareProcessNamespace: true", () => {
+    const yaml = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shared-pid-deploy
+spec:
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      shareProcessNamespace: true
+      containers:
+        - name: app
+          image: nginx
+`;
+    const violations = checkRule("MV1017", yaml);
+    expect(violations).toHaveLength(1);
+    expect(violations[0].resource).toBe("Deployment/shared-pid-deploy");
+  });
+
+  it("should pass when shareProcessNamespace is not set", () => {
+    const violations = checkRule("MV1017", DEPLOYMENT_BASE);
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should pass when shareProcessNamespace is false", () => {
+    const yaml = `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: no-shared-pid
+spec:
+  shareProcessNamespace: false
+  containers:
+    - name: app
+      image: nginx
+`;
+    const violations = checkRule("MV1017", yaml);
+    expect(violations).toHaveLength(0);
   });
 });

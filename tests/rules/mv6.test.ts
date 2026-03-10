@@ -1865,3 +1865,135 @@ spec:
     expect(violations).toHaveLength(0);
   });
 });
+
+// ============================================================================
+// MV6014 - Container with livenessProbe but no startupProbe
+// ============================================================================
+describe("MV6014 - livenessProbe without startupProbe", () => {
+  it("should flag container with livenessProbe but no startupProbe", () => {
+    const violations = checkRule(
+      "MV6014",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+`,
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV6014");
+    expect(violations[0].severity).toBe("info");
+  });
+
+  it("should pass when both livenessProbe and startupProbe are defined", () => {
+    const violations = checkRule(
+      "MV6014",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 10
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should pass when container has no livenessProbe", () => {
+    const violations = checkRule(
+      "MV6014",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: myapp:1.0
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should flag each container individually", () => {
+    const violations = checkRule(
+      "MV6014",
+      `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multi-container
+spec:
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+        - name: app
+          image: app:1.0
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+        - name: sidecar
+          image: sidecar:1.0
+          livenessProbe:
+            tcpSocket:
+              port: 9090
+`,
+    );
+    expect(violations).toHaveLength(2);
+  });
+});

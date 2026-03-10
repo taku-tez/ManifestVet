@@ -125,8 +125,8 @@ volumes:
     safe: false,
   },
   MV1015: {
-    ja: "`serviceAccountName: default` を変更してください。アプリ専用のServiceAccountを作成して最小権限を付与してください。",
-    en: "Replace the `default` ServiceAccount with a dedicated one that has only the required permissions.",
+    ja: "アプリ専用のServiceAccountを作成して `serviceAccountName` を明示的に指定してください。未設定の場合、KubernetesはPodに `default` ServiceAccountを自動割り当てします。",
+    en: "Create a dedicated ServiceAccount and set serviceAccountName explicitly. When not set, Kubernetes automatically assigns the `default` ServiceAccount to the Pod.",
     patch: `# 専用のServiceAccountを作成:
 apiVersion: v1
 kind: ServiceAccount
@@ -139,7 +139,8 @@ automountServiceAccountToken: false
 spec:
   template:
     spec:
-      serviceAccountName: my-app-sa`,
+      serviceAccountName: my-app-sa
+      automountServiceAccountToken: false`,
     safe: false,
   },
   MV1016: {
@@ -244,28 +245,34 @@ rules:
     safe: false,
   },
   MV3003: {
-    ja: "NetworkPolicyのingressルールで `from: [{}]` はすべてのSourceを許可します。送信元をNamespaceSelector/PodSelectorで制限してください。",
-    en: "The `from: [{}]` ingress rule allows all sources. Restrict with namespaceSelector/podSelector.",
+    ja: "NetworkPolicyのingressルールに `from` フィールドがない、または `from: []` / `from: [{}]` の場合、すべての送信元を許可します。NamespaceSelector/PodSelectorで送信元を制限してください。",
+    en: "A NetworkPolicy ingress rule with no `from` field, `from: []`, or `from: [{}]` allows all sources per Kubernetes semantics. Restrict with namespaceSelector/podSelector.",
     patch: `spec:
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: my-namespace
+              kubernetes.io/metadata.name: my-namespace
           podSelector:
             matchLabels:
-              app: my-app`,
+              app: my-app
+      ports:
+        - protocol: TCP
+          port: 8080`,
     safe: false,
   },
   MV3004: {
-    ja: "NetworkPolicyのegressルールで `to: [{}]` はすべての宛先を許可します。宛先をNamespaceSelector/PodSelectorで制限してください。",
-    en: "The `to: [{}]` egress rule allows all destinations. Restrict with namespaceSelector/podSelector.",
+    ja: "NetworkPolicyのegressルールに `to` フィールドがない、または `to: []` / `to: [{}]` の場合、すべての宛先を許可します。NamespaceSelector/PodSelectorで宛先を制限してください。",
+    en: "A NetworkPolicy egress rule with no `to` field, `to: []`, or `to: [{}]` allows all destinations per Kubernetes semantics. Restrict with namespaceSelector/podSelector.",
     patch: `spec:
   egress:
     - to:
         - namespaceSelector:
             matchLabels:
-              name: my-namespace`,
+              kubernetes.io/metadata.name: my-namespace
+      ports:
+        - protocol: TCP
+          port: 443`,
     safe: false,
   },
   MV3005: {
@@ -500,6 +507,78 @@ stringData:
     patch: `spec:
   minReadySeconds: 10`,
     safe: true,
+  },
+  MV6011: {
+    ja: "`terminationMessagePolicy: FallbackToLogsOnError` を設定してください。終了メッセージファイルが空の場合にログの末尾を自動的に使用します。",
+    en: "Set `terminationMessagePolicy: FallbackToLogsOnError` to automatically use container log output as the termination message when the termination message file is empty.",
+    patch: `containers:
+  - name: my-app
+    terminationMessagePolicy: FallbackToLogsOnError`,
+    safe: true,
+  },
+  MV6012: {
+    ja: "`revisionHistoryLimit` を 3〜5 に設定してください。デフォルトの10は不要な古いReplicaSetをetcdに蓄積させます。",
+    en: "Set `revisionHistoryLimit` to 3–5. The default of 10 accumulates old ReplicaSets in etcd unnecessarily.",
+    patch: `spec:
+  revisionHistoryLimit: 3`,
+    safe: true,
+  },
+  MV6013: {
+    ja: "StatefulSetの `podManagementPolicy: Parallel` を設定してください。厳密な順序が不要な場合、スケールアップ・ローリングアップデートが大幅に高速化されます。",
+    en: "Set `podManagementPolicy: Parallel` on the StatefulSet. When strict pod ordering is not required, this significantly speeds up scale-up and rolling updates.",
+    patch: `spec:
+  podManagementPolicy: Parallel`,
+    safe: false,
+  },
+
+  // ─── MV2010 ────────────────────────────────────────────────────────────
+  MV2010: {
+    ja: "ClusterRoleでワイルドカードリソース (`*`) への get/list/watch を削除してください。Secrets や ConfigMap などすべてのリソースへの読み取りアクセスは過剰な権限です。",
+    en: "Remove get/list/watch on all resources (`*`) from the ClusterRole. Read access to all resources grants broad access to Secrets and ConfigMaps cluster-wide.",
+    patch: `rules:
+  # ワイルドカード (*) を具体的なリソースに置き換える:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods", "configmaps"]
+    verbs: ["get", "list"]`,
+    safe: false,
+  },
+
+  // ─── MV4007 ────────────────────────────────────────────────────────────
+  MV4007: {
+    ja: "イメージにレジストリプレフィックスを明示的に指定してください。プレフィックスなしの場合は Docker Hub (`docker.io`) が暗黙的に使用されます。本番ではプライベートレジストリまたはミラーレジストリを推奨します。",
+    en: "Specify the full registry prefix for the image. Without a prefix, Docker Hub (`docker.io`) is used implicitly. For production, use a private or mirrored registry.",
+    patch: `# Docker Hub を明示指定:
+image: docker.io/nginx:1.25.3
+# または社内レジストリ/ミラーを使用:
+image: my-registry.example.com/nginx:1.25.3`,
+    safe: false,
+  },
+
+  // ─── MV1017 ────────────────────────────────────────────────────────────
+  MV1017: {
+    ja: "`shareProcessNamespace: false` を設定するか、フィールドを削除してください。プロセス名前空間の共有はコンテナ間でシグナルの送信やプロセス情報の参照を可能にし、セキュリティリスクになります。",
+    en: "Remove `shareProcessNamespace` or set it to `false`. Shared process namespace allows containers to inspect and signal each other's processes, which is a security risk.",
+    patch: `spec:
+  shareProcessNamespace: false`,
+    safe: true,
+  },
+
+  // ─── MV6014 ────────────────────────────────────────────────────────────
+  MV6014: {
+    ja: "`startupProbe` を追加して、起動に時間がかかるコンテナが `livenessProbe` によって早期に再起動されないよう保護してください。",
+    en: "Add a `startupProbe` to protect slow-starting containers from being killed by the `livenessProbe` before they finish initializing.",
+    patch: `containers:
+  - name: app
+    startupProbe:
+      httpGet:
+        path: /healthz
+        port: 8080
+      failureThreshold: 30   # 30 × 10s = 5min max startup time
+      periodSeconds: 10`,
+    safe: false,
   },
 };
 

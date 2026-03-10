@@ -640,23 +640,46 @@ const mv1015: Rule = {
   id: "MV1015",
   severity: "warning",
   description:
-    'Pods should not use the "default" service account.',
+    'Pods should not use the "default" service account. When serviceAccountName is not set, Kubernetes implicitly assigns the "default" service account.',
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
     if (!isPodBearing(resource)) return [];
 
     const podSpec = getPodSpec(resource);
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+
+    // Explicit "default"
     if (podSpec?.serviceAccountName === "default") {
-      const resourceId = `${resource.kind}/${resource.metadata.name}`;
       return [
         {
           rule: "MV1015",
           severity: "warning",
-          message: `${resourceId} uses the "default" service account.`,
+          message: `${resourceId} explicitly uses the "default" service account.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
           path: podSpecPath(resource, "serviceAccountName"),
           fix: "Create and assign a dedicated service account.",
+        },
+      ];
+    }
+
+    // Implicit "default": serviceAccountName not set at all.
+    // When the SA is not specified, Kubernetes automatically uses "default".
+    // Flag only when automountServiceAccountToken is not explicitly false,
+    // because that combination means the default SA token is mounted in the pod.
+    if (
+      !podSpec?.serviceAccountName &&
+      podSpec?.automountServiceAccountToken !== false
+    ) {
+      return [
+        {
+          rule: "MV1015",
+          severity: "warning",
+          message: `${resourceId} does not set serviceAccountName, so it implicitly uses the "default" service account with its token auto-mounted.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: podSpecPath(resource, "serviceAccountName"),
+          fix: "Create a dedicated service account and set serviceAccountName, or set automountServiceAccountToken: false if no SA token is needed.",
         },
       ];
     }
@@ -698,6 +721,38 @@ const mv1016: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV1017 - shareProcessNamespace enabled
+// ---------------------------------------------------------------------------
+const mv1017: Rule = {
+  id: "MV1017",
+  severity: "warning",
+  description:
+    "Pod should not enable shareProcessNamespace. When enabled, all containers in the pod share the same PID namespace, allowing one container to inspect and signal processes in other containers.",
+  check(ctx: RuleContext): Violation[] {
+    const { resource } = ctx;
+    if (!isPodBearing(resource)) return [];
+
+    const podSpec = getPodSpec(resource);
+    if (podSpec?.shareProcessNamespace === true) {
+      const resourceId = `${resource.kind}/${resource.metadata.name}`;
+      return [
+        {
+          rule: "MV1017",
+          severity: "warning",
+          message: `${resourceId} has shareProcessNamespace enabled, allowing containers to inspect each other's processes.`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: podSpecPath(resource, "shareProcessNamespace"),
+          fix: "Remove shareProcessNamespace or set it to false unless cross-container process sharing is explicitly required.",
+        },
+      ];
+    }
+
+    return [];
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV1 rules
 // ---------------------------------------------------------------------------
 export const mv1Rules: Rule[] = [
@@ -717,4 +772,5 @@ export const mv1Rules: Rule[] = [
   mv1014,
   mv1015,
   mv1016,
+  mv1017,
 ];

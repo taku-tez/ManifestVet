@@ -29,7 +29,7 @@ rules:
     const violations = checkRule("MV2001", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2001");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("Role/wildcard-verbs-role");
     expect(violations[0].message).toContain("wildcard (*) verbs");
     expect(violations[0].path).toBe("rules[0].verbs");
@@ -167,7 +167,7 @@ rules:
     const violations = checkRule("MV2002", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2002");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("wildcard (*) resources");
     expect(violations[0].path).toBe("rules[0].resources");
     expect(violations[0].resource).toBe("Role/wildcard-resources-role");
@@ -271,7 +271,7 @@ rules:
     const violations = checkRule("MV2003", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2003");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("wildcard (*) apiGroups");
     expect(violations[0].path).toBe("rules[0].apiGroups");
     expect(violations[0].resource).toBe("Role/wildcard-apigroups-role");
@@ -388,7 +388,7 @@ subjects:
     const violations = checkRule("MV2004", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2004");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("cluster-admin");
     expect(violations[0].message).toContain("unrestricted superuser access");
     expect(violations[0].path).toBe("roleRef.name");
@@ -484,7 +484,7 @@ metadata:
     const violations = checkRule("MV2005", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2005");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("automountServiceAccountToken");
     expect(violations[0].path).toBe("automountServiceAccountToken");
     expect(violations[0].resource).toBe("ServiceAccount/my-sa");
@@ -585,7 +585,7 @@ rules:
     const violations = checkRule("MV2006", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2006");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("secrets");
     expect(violations[0].path).toBe("rules[0].resources");
     expect(violations[0].resource).toBe("Role/secret-reader");
@@ -700,7 +700,7 @@ rules:
     const violations = checkRule("MV2007", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2007");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("exec access to pods");
     expect(violations[0].path).toBe("rules[0].resources");
     expect(violations[0].resource).toBe("Role/exec-role");
@@ -798,7 +798,7 @@ rules:
     const violations = checkRule("MV2008", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2008");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("impersonation permissions");
     expect(violations[0].path).toBe("rules[0].verbs");
     expect(violations[0].resource).toBe("ClusterRole/impersonator");
@@ -950,7 +950,7 @@ subjects:
     const violations = checkRule("MV2009", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV2009");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("system:unauthenticated");
     expect(violations[0].path).toBe("subjects[0].name");
     expect(violations[0].resource).toBe("ClusterRoleBinding/unauth-binding");

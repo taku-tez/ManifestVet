@@ -4,8 +4,10 @@ import { Violation, Severity, Rule } from "../rules/types";
 import { ManifestVetConfig } from "./config";
 
 const SEVERITY_ORDER: Record<Severity, number> = {
-  error: 3,
-  warning: 2,
+  critical: 5,
+  high: 4,
+  medium: 3,
+  low: 2,
   info: 1,
 };
 

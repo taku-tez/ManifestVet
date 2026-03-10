@@ -31,7 +31,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV4001");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("web");
     expect(violations[0].message).toContain("nginx:latest");
     expect(violations[0].path).toBe("spec.containers[0].image");
@@ -393,7 +393,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV4003");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("web");
     expect(violations[0].message).toContain("Never");
     expect(violations[0].path).toBe("spec.containers[0].imagePullPolicy");
@@ -568,7 +568,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV4004");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("web");
     expect(violations[0].message).toContain("IfNotPresent");
     expect(violations[0].message).toContain("nginx");
@@ -759,7 +759,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV4005");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("setup");
     expect(violations[0].message).toContain("busybox:latest");
     expect(violations[0].path).toBe("spec.initContainers[0].image");

@@ -103,7 +103,7 @@ function podSpecPath(resource: RuleContext["resource"], suffix?: string): string
 // ---------------------------------------------------------------------------
 const mv1001: Rule = {
   id: "MV1001",
-  severity: "error",
+  severity: "high",
   description:
     "Containers should set securityContext.runAsNonRoot to true to prevent running as the root user.",
   check(ctx: RuleContext): Violation[] {
@@ -122,7 +122,7 @@ const mv1001: Rule = {
       if (!containerRunAsNonRoot && !podLevelRunAsNonRoot) {
         violations.push({
           rule: "MV1001",
-          severity: "error",
+          severity: "high",
           message: `Container "${container.name ?? index}" does not set runAsNonRoot to true (neither at container nor pod level).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -141,7 +141,7 @@ const mv1001: Rule = {
 // ---------------------------------------------------------------------------
 const mv1002: Rule = {
   id: "MV1002",
-  severity: "error",
+  severity: "high",
   description:
     "Containers should explicitly set allowPrivilegeEscalation to false. The default is true.",
   check(ctx: RuleContext): Violation[] {
@@ -155,7 +155,7 @@ const mv1002: Rule = {
       if (container.securityContext?.allowPrivilegeEscalation !== false) {
         violations.push({
           rule: "MV1002",
-          severity: "error",
+          severity: "high",
           message: `Container "${container.name ?? index}" does not explicitly set allowPrivilegeEscalation to false.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -179,7 +179,7 @@ const mv1002: Rule = {
 // ---------------------------------------------------------------------------
 const mv1003: Rule = {
   id: "MV1003",
-  severity: "error",
+  severity: "critical",
   description: "Containers should not run in privileged mode.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
@@ -192,7 +192,7 @@ const mv1003: Rule = {
       if (container.securityContext?.privileged === true) {
         violations.push({
           rule: "MV1003",
-          severity: "error",
+          severity: "critical",
           message: `Container "${container.name ?? index}" is running in privileged mode.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -216,7 +216,7 @@ const mv1003: Rule = {
 // ---------------------------------------------------------------------------
 const mv1004: Rule = {
   id: "MV1004",
-  severity: "warning",
+  severity: "critical",
   description: "Pod should not use the host network namespace.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
@@ -228,7 +228,7 @@ const mv1004: Rule = {
       return [
         {
           rule: "MV1004",
-          severity: "warning",
+          severity: "critical",
           message: `${resourceId} has hostNetwork enabled.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -247,7 +247,7 @@ const mv1004: Rule = {
 // ---------------------------------------------------------------------------
 const mv1005: Rule = {
   id: "MV1005",
-  severity: "warning",
+  severity: "critical",
   description: "Pod should not use the host PID namespace.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
@@ -259,7 +259,7 @@ const mv1005: Rule = {
       return [
         {
           rule: "MV1005",
-          severity: "warning",
+          severity: "critical",
           message: `${resourceId} has hostPID enabled.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -278,7 +278,7 @@ const mv1005: Rule = {
 // ---------------------------------------------------------------------------
 const mv1006: Rule = {
   id: "MV1006",
-  severity: "warning",
+  severity: "critical",
   description: "Pod should not use the host IPC namespace.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
@@ -290,7 +290,7 @@ const mv1006: Rule = {
       return [
         {
           rule: "MV1006",
-          severity: "warning",
+          severity: "critical",
           message: `${resourceId} has hostIPC enabled.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -309,7 +309,7 @@ const mv1006: Rule = {
 // ---------------------------------------------------------------------------
 const mv1007: Rule = {
   id: "MV1007",
-  severity: "error",
+  severity: "high",
   description:
     "Containers should not add dangerous Linux capabilities (NET_ADMIN, SYS_ADMIN, SYS_PTRACE, SYS_MODULE, DAC_OVERRIDE).",
   check(ctx: RuleContext): Violation[] {
@@ -326,7 +326,7 @@ const mv1007: Rule = {
         if (DANGEROUS_CAPABILITIES.includes(upper)) {
           violations.push({
             rule: "MV1007",
-            severity: "error",
+            severity: "high",
             message: `Container "${container.name ?? index}" adds dangerous capability "${upper}".`,
             resource: resourceId,
             namespace: resource.metadata.namespace,
@@ -351,7 +351,7 @@ const mv1007: Rule = {
 // ---------------------------------------------------------------------------
 const mv1008: Rule = {
   id: "MV1008",
-  severity: "warning",
+  severity: "medium",
   description:
     "Containers should define resource limits for both CPU and memory.",
   check(ctx: RuleContext): Violation[] {
@@ -373,7 +373,7 @@ const mv1008: Rule = {
 
         violations.push({
           rule: "MV1008",
-          severity: "warning",
+          severity: "medium",
           message: `Container "${container.name ?? index}" is missing resource limits for: ${missing.join(", ")}.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -433,7 +433,7 @@ const mv1009: Rule = {
 // ---------------------------------------------------------------------------
 const mv1010: Rule = {
   id: "MV1010",
-  severity: "warning",
+  severity: "low",
   description:
     "Containers should set readOnlyRootFilesystem to true in securityContext.",
   check(ctx: RuleContext): Violation[] {
@@ -447,7 +447,7 @@ const mv1010: Rule = {
       if (container.securityContext?.readOnlyRootFilesystem !== true) {
         violations.push({
           rule: "MV1010",
-          severity: "warning",
+          severity: "low",
           message: `Container "${container.name ?? index}" does not set readOnlyRootFilesystem to true.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -471,7 +471,7 @@ const mv1010: Rule = {
 // ---------------------------------------------------------------------------
 const mv1011: Rule = {
   id: "MV1011",
-  severity: "info",
+  severity: "low",
   description:
     'Pod should set a seccomp profile (RuntimeDefault or Localhost) at the pod level.',
   check(ctx: RuleContext): Violation[] {
@@ -486,7 +486,7 @@ const mv1011: Rule = {
       return [
         {
           rule: "MV1011",
-          severity: "info",
+          severity: "low",
           message: `${resourceId} does not set a seccomp profile at the pod level (expected RuntimeDefault or Localhost).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -505,7 +505,7 @@ const mv1011: Rule = {
 // ---------------------------------------------------------------------------
 const mv1012: Rule = {
   id: "MV1012",
-  severity: "warning",
+  severity: "medium",
   description:
     'Containers should drop ALL capabilities via securityContext.capabilities.drop: ["ALL"].',
   check(ctx: RuleContext): Violation[] {
@@ -523,7 +523,7 @@ const mv1012: Rule = {
       if (!dropsAll) {
         violations.push({
           rule: "MV1012",
-          severity: "warning",
+          severity: "medium",
           message: `Container "${container.name ?? index}" does not drop ALL capabilities.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -547,7 +547,7 @@ const mv1012: Rule = {
 // ---------------------------------------------------------------------------
 const mv1013: Rule = {
   id: "MV1013",
-  severity: "error",
+  severity: "critical",
   description:
     "Containers should not explicitly run as root (runAsUser: 0).",
   check(ctx: RuleContext): Violation[] {
@@ -562,7 +562,7 @@ const mv1013: Rule = {
     if (podSpec?.securityContext?.runAsUser === 0) {
       violations.push({
         rule: "MV1013",
-        severity: "error",
+        severity: "critical",
         message: `${resourceId} sets runAsUser to 0 (root) at the pod level.`,
         resource: resourceId,
         namespace: resource.metadata.namespace,
@@ -576,7 +576,7 @@ const mv1013: Rule = {
       if (container.securityContext?.runAsUser === 0) {
         violations.push({
           rule: "MV1013",
-          severity: "error",
+          severity: "critical",
           message: `Container "${container.name ?? index}" sets runAsUser to 0 (root).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -600,7 +600,7 @@ const mv1013: Rule = {
 // ---------------------------------------------------------------------------
 const mv1014: Rule = {
   id: "MV1014",
-  severity: "error",
+  severity: "critical",
   description:
     'Containers should not set procMount to "Unmasked".',
   check(ctx: RuleContext): Violation[] {
@@ -614,7 +614,7 @@ const mv1014: Rule = {
       if (container.securityContext?.procMount === "Unmasked") {
         violations.push({
           rule: "MV1014",
-          severity: "error",
+          severity: "critical",
           message: `Container "${container.name ?? index}" sets procMount to "Unmasked".`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -638,7 +638,7 @@ const mv1014: Rule = {
 // ---------------------------------------------------------------------------
 const mv1015: Rule = {
   id: "MV1015",
-  severity: "warning",
+  severity: "low",
   description:
     'Pods should not use the "default" service account. When serviceAccountName is not set, Kubernetes implicitly assigns the "default" service account.',
   check(ctx: RuleContext): Violation[] {
@@ -653,7 +653,7 @@ const mv1015: Rule = {
       return [
         {
           rule: "MV1015",
-          severity: "warning",
+          severity: "low",
           message: `${resourceId} explicitly uses the "default" service account.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -674,7 +674,7 @@ const mv1015: Rule = {
       return [
         {
           rule: "MV1015",
-          severity: "warning",
+          severity: "low",
           message: `${resourceId} does not set serviceAccountName, so it implicitly uses the "default" service account with its token auto-mounted.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -693,7 +693,7 @@ const mv1015: Rule = {
 // ---------------------------------------------------------------------------
 const mv1016: Rule = {
   id: "MV1016",
-  severity: "warning",
+  severity: "medium",
   description:
     "Pods should explicitly set automountServiceAccountToken to false unless the service account token is required.",
   check(ctx: RuleContext): Violation[] {
@@ -706,7 +706,7 @@ const mv1016: Rule = {
       return [
         {
           rule: "MV1016",
-          severity: "warning",
+          severity: "medium",
           message: `${resourceId} does not set automountServiceAccountToken: false on the pod spec. The service account token will be auto-mounted even if the pod does not use it (also check MV2005 to disable at the ServiceAccount level).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -725,7 +725,7 @@ const mv1016: Rule = {
 // ---------------------------------------------------------------------------
 const mv1017: Rule = {
   id: "MV1017",
-  severity: "warning",
+  severity: "low",
   description:
     "Pod should not enable shareProcessNamespace. When enabled, all containers in the pod share the same PID namespace, allowing one container to inspect and signal processes in other containers.",
   check(ctx: RuleContext): Violation[] {
@@ -738,7 +738,7 @@ const mv1017: Rule = {
       return [
         {
           rule: "MV1017",
-          severity: "warning",
+          severity: "low",
           message: `${resourceId} has shareProcessNamespace enabled, allowing containers to inspect each other's processes.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -757,7 +757,7 @@ const mv1017: Rule = {
 // ---------------------------------------------------------------------------
 const mv1018: Rule = {
   id: "MV1018",
-  severity: "warning",
+  severity: "low",
   description: "Container should not have stdin or tty enabled. These allow interactive shell access which may be used for container escape or lateral movement.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
@@ -771,7 +771,7 @@ const mv1018: Rule = {
         const flags = [container.stdin && "stdin", container.tty && "tty"].filter(Boolean).join(" and ");
         violations.push({
           rule: "MV1018",
-          severity: "warning",
+          severity: "low",
           message: `Container "${container.name ?? index}" has ${flags} enabled, allowing interactive shell access.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,

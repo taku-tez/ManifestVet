@@ -46,7 +46,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6001");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("no metadata.labels");
     expect(violations[0].message).toContain("no-labels-deploy");
     expect(violations[0].path).toBe("metadata.labels");
@@ -298,7 +298,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6002");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("replicas set to 1");
     expect(violations[0].resource).toBe("Deployment/single-replica");
     expect(violations[0].path).toBe("spec.replicas");
@@ -447,7 +447,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6003");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("app");
     expect(violations[0].message).toContain("livenessProbe");
     expect(violations[0].path).toBe("spec.containers[0].livenessProbe");
@@ -590,7 +590,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6004");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("app");
     expect(violations[0].message).toContain("readinessProbe");
     expect(violations[0].path).toBe("spec.containers[0].readinessProbe");
@@ -742,7 +742,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6005");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("no-affinity");
     expect(violations[0].message).toContain("podAntiAffinity");
     expect(violations[0].path).toBe(
@@ -926,7 +926,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6006");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("does not define a deployment strategy");
     expect(violations[0].path).toBe("spec.strategy");
     expect(violations[0].resource).toBe("Deployment/no-strategy");
@@ -1098,7 +1098,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6007");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("app");
     expect(violations[0].message).toContain("preStop");
     expect(violations[0].path).toBe("spec.containers[0].lifecycle.preStop");
@@ -1264,7 +1264,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6008");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("default");
     expect(violations[0].message).toContain("default-ns-deploy");
     expect(violations[0].path).toBe("metadata.namespace");
@@ -1411,7 +1411,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6009");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("missing or empty metadata.name");
     expect(violations[0].path).toBe("metadata.name");
     expect(violations[0].resource).toBe("Deployment/");
@@ -1530,7 +1530,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6010");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("no-min-ready");
     expect(violations[0].message).toContain("minReadySeconds");
     expect(violations[0].path).toBe("spec.minReadySeconds");
@@ -1906,7 +1906,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6014");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
   });
 
   it("should pass when both livenessProbe and startupProbe are defined", () => {
@@ -2034,7 +2034,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6015");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("my-app");
     expect(violations[0].message).toContain("2 replicas");
     expect(violations[0].resource).toBe("Deployment/my-app");
@@ -2169,7 +2169,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV6016");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("extensions/v1beta1");
     expect(violations[0].message).toContain("1.16");
     expect(violations[0].path).toBe("apiVersion");

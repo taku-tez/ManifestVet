@@ -15,26 +15,26 @@ describe("Rego policy interface", () => {
     // The expected output format from OPA
     const expectedViolation = {
       rule: "ORG001",
-      severity: "warning",
+      severity: "medium",
       message: "Missing team label",
       resource: "Deployment/app",
     };
     expect(expectedViolation.rule).toBeTruthy();
-    expect(["error", "warning", "info"]).toContain(expectedViolation.severity);
+    expect(["critical", "high", "medium", "low", "info"]).toContain(expectedViolation.severity);
     expect(typeof expectedViolation.message).toBe("string");
     expect(typeof expectedViolation.resource).toBe("string");
   });
 
   it("handles unknown severity gracefully", () => {
-    const rawViolations = [{ rule: "X001", severity: "critical", message: "test", resource: "Pod/x" }];
-    // The rego.ts normalizer converts unknown severity to "warning"
+    const rawViolations = [{ rule: "X001", severity: "unknown-level", message: "test", resource: "Pod/x" }];
+    // The rego.ts normalizer converts unknown severity to "medium"
     const normalized = rawViolations.map((v: any) => ({
       ...v,
-      severity: (["error", "warning", "info"].includes(v.severity)
+      severity: (["critical", "high", "medium", "low", "info"].includes(v.severity)
         ? v.severity
-        : "warning") as "error" | "warning" | "info",
+        : "medium") as "critical" | "high" | "medium" | "low" | "info",
     }));
-    expect(normalized[0].severity).toBe("warning");
+    expect(normalized[0].severity).toBe("medium");
   });
 });
 
@@ -49,7 +49,7 @@ violations[v] {
   not resource.metadata.labels["app.kubernetes.io/name"]
   v := {
     "rule": "ORG002",
-    "severity": "warning",
+    "severity": "medium",
     "message": "Deployment missing app.kubernetes.io/name label",
     "resource": concat("/", [resource.kind, resource.metadata.name]),
   }

@@ -36,12 +36,12 @@ Usage:
   manifestvet --github <owner/repo|blob-url> [--branch <branch>] [--path <subdir>]
   manifestvet --cluster [--context <name>] [--namespace <ns>|--all-namespaces] [--delta --dir <dir>]
   manifestvet hook install|uninstall|config
-  manifestvet webhook [--port 8443] [--cert cert.pem --key key.pem] [--severity error]
+  manifestvet webhook [--port 8443] [--cert cert.pem --key key.pem] [--severity high]
 
 Options:
   --format <tty|json|sarif|html|markdown>   Output format (default: tty)
   --ignore <rule>                           Ignore rule (repeatable)
-  --severity <error|warning|info>           Minimum severity to report
+  --severity <critical|high|medium|low|info>  Minimum severity to report
   --no-color                                Disable colored output
   --stdin                                   Read from stdin
 
@@ -120,7 +120,7 @@ interface CLIArgs {
   delta: boolean;
   format: "tty" | "json" | "sarif" | "html" | "markdown";
   ignore: string[];
-  severity: "error" | "warning" | "info";
+  severity: "critical" | "high" | "medium" | "low" | "info";
   noColor: boolean;
   fix: boolean;
   fixLang: FixLang;
@@ -198,7 +198,7 @@ function parseArgs(argv: string[]): CLIArgs {
         args.ignore.push(argv[++i]);
         break;
       case "--severity":
-        args.severity = argv[++i] as "error" | "warning" | "info";
+        args.severity = argv[++i] as "critical" | "high" | "medium" | "low" | "info";
         break;
       case "--github":
         args.github = argv[++i];
@@ -417,7 +417,7 @@ async function main(): Promise<void> {
       }
 
       output(delta, args.format, args.noColor, "cluster");
-      process.exit(delta.some((v) => v.severity === "error") ? 1 : 0);
+      process.exit(delta.some((v) => v.severity === "critical" || v.severity === "high") ? 1 : 0);
       return;
     }
 
@@ -523,7 +523,7 @@ async function main(): Promise<void> {
 
   output(violations, args.format, args.noColor, files[0]?.path);
 
-  const hasErrors = violations.some((v) => v.severity === "error");
+  const hasErrors = violations.some((v) => v.severity === "critical" || v.severity === "high");
   process.exit(hasErrors ? 1 : 0);
 }
 

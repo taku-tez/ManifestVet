@@ -34,7 +34,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV5001");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("app");
     expect(violations[0].message).toContain("DB_PASSWORD");
     expect(violations[0].path).toBe("spec.containers[0].env[0].value");
@@ -381,7 +381,7 @@ data:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV5002");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("my-secret");
     expect(violations[0].message).toContain("password");
     expect(violations[0].path).toBe("data.password");
@@ -543,7 +543,7 @@ data:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV5003");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("my-config");
     expect(violations[0].message).toContain("db_password");
     expect(violations[0].path).toBe("data.db_password");
@@ -689,7 +689,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV5004");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("info");
     expect(violations[0].message).toContain("host-data");
     expect(violations[0].message).toContain("/var/data");
     expect(violations[0].path).toBe("spec.volumes[0].hostPath");

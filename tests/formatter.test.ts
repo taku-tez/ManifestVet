@@ -6,20 +6,20 @@ import { Violation } from "../src/rules/types";
 const violations: Violation[] = [
   {
     rule: "MV1001",
-    severity: "error",
+    severity: "high",
     message: "runAsNonRoot not set to true",
     resource: "Deployment/nginx",
     fix: "Set runAsNonRoot: true\n```yaml\nsecurityContext:\n  runAsNonRoot: true\n```",
   },
   {
     rule: "MV1008",
-    severity: "warning",
+    severity: "medium",
     message: "no resource limits set",
     resource: "Deployment/nginx",
   },
   {
     rule: "MV6001",
-    severity: "info",
+    severity: "low",
     message: "missing recommended labels",
     resource: "Service/frontend",
   },
@@ -42,9 +42,9 @@ describe("formatHTML", () => {
 
   it("includes severity badges", () => {
     const html = formatHTML(violations);
-    expect(html).toContain("error");
-    expect(html).toContain("warning");
-    expect(html).toContain("info");
+    expect(html).toContain("high");
+    expect(html).toContain("medium");
+    expect(html).toContain("low");
   });
 
   it("shows fix suggestion when present", () => {
@@ -65,19 +65,20 @@ describe("formatHTML", () => {
     expect(html).toContain("<!DOCTYPE html>");
   });
 
-  it("correctly counts errors, warnings and info", () => {
+  it("correctly counts by severity", () => {
     const html = formatHTML(violations);
-    // violations has 1 error, 1 warning, 1 info
-    // The stat numbers appear in the summary section
-    const errCount = violations.filter((v) => v.severity === "error").length;
-    const warnCount = violations.filter((v) => v.severity === "warning").length;
-    const infoCount = violations.filter((v) => v.severity === "info").length;
-    expect(errCount).toBe(1);
-    expect(warnCount).toBe(1);
-    expect(infoCount).toBe(1);
+    // violations has 1 high, 1 medium, 1 low
+    const highCount   = violations.filter((v) => v.severity === "high").length;
+    const mediumCount = violations.filter((v) => v.severity === "medium").length;
+    const lowCount    = violations.filter((v) => v.severity === "low").length;
+    expect(highCount).toBe(1);
+    expect(mediumCount).toBe(1);
+    expect(lowCount).toBe(1);
     // Verify the counts are reflected in the rendered HTML
-    expect(html).toContain("Errors");
-    expect(html).toContain("Warnings");
+    expect(html).toContain("Critical");
+    expect(html).toContain("High");
+    expect(html).toContain("Medium");
+    expect(html).toContain("Low");
     expect(html).toContain("Info");
   });
 
@@ -86,15 +87,15 @@ describe("formatHTML", () => {
     expect(html).toContain("0");
   });
 
-  it("handles violations with only errors", () => {
+  it("handles violations with only critical/high", () => {
     const errorOnly: Violation[] = [
-      { rule: "MV1001", severity: "error", message: "error msg", resource: "Pod/foo" },
-      { rule: "MV1002", severity: "error", message: "error msg 2", resource: "Pod/bar" },
+      { rule: "MV1001", severity: "high", message: "error msg", resource: "Pod/foo" },
+      { rule: "MV1003", severity: "critical", message: "error msg 2", resource: "Pod/bar" },
     ];
     const html = formatHTML(errorOnly);
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("MV1001");
-    expect(html).toContain("MV1002");
+    expect(html).toContain("MV1003");
   });
 
   it("uses custom title when provided", () => {
@@ -105,7 +106,7 @@ describe("formatHTML", () => {
   it("escapes HTML special characters", () => {
     const xssViolations: Violation[] = [{
       rule: "MV1001",
-      severity: "error",
+      severity: "high",
       message: "<script>alert('xss')</script>",
       resource: "Deployment/app",
     }];
@@ -155,8 +156,8 @@ describe("formatMarkdown", () => {
 
   it("includes severity emojis", () => {
     const md = formatMarkdown(violations);
-    expect(md).toContain("🔴");
-    expect(md).toContain("🟡");
-    expect(md).toContain("🔵");
+    expect(md).toContain("🟠"); // high
+    expect(md).toContain("🟡"); // medium
+    expect(md).toContain("🟢"); // low
   });
 });

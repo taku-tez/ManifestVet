@@ -1,6 +1,6 @@
 import { K8sResource } from "../parser/types";
 
-export type Severity = "error" | "warning" | "info";
+export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
 export interface Violation {
   rule: string;

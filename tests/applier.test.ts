@@ -8,13 +8,13 @@ import { Violation } from "../src/rules/types";
 const violations: Violation[] = [
   {
     rule: "MV1001",
-    severity: "error",
+    severity: "high",
     message: "runAsNonRoot not set to true",
     resource: "Deployment/nginx",
   },
   {
     rule: "MV1008",
-    severity: "warning",
+    severity: "medium",
     message: "no resource limits set",
     resource: "Deployment/nginx",
   },
@@ -27,7 +27,7 @@ const violations: Violation[] = [
   // Rule with no template
   {
     rule: "MV9999",
-    severity: "error",
+    severity: "high",
     message: "unknown rule",
     resource: "Deployment/nginx",
   },
@@ -79,7 +79,7 @@ describe("prepareFixReports", () => {
 
   it("returns empty array for violations with no templates", () => {
     const noTemplateViolations: Violation[] = [
-      { rule: "MV9999", severity: "error", message: "unknown", resource: "Pod/foo" },
+      { rule: "MV9999", severity: "high", message: "unknown", resource: "Pod/foo" },
     ];
     const reports = prepareFixReports(noTemplateViolations, { "Pod/foo": "pod.yaml" });
     expect(reports).toHaveLength(0);
@@ -87,7 +87,7 @@ describe("prepareFixReports", () => {
 
   it("assigns 'unknown' file for resources not in fileMap", () => {
     const orphanViolations: Violation[] = [
-      { rule: "MV1001", severity: "error", message: "runAsNonRoot not set", resource: "Deployment/orphan" },
+      { rule: "MV1001", severity: "high", message: "runAsNonRoot not set", resource: "Deployment/orphan" },
     ];
     const reports = prepareFixReports(orphanViolations, {});
     expect(reports).toHaveLength(1);
@@ -178,7 +178,7 @@ describe("writeFixSummary", () => {
   it("produces empty summary (only header) when all reports have safeOnly filtered", () => {
     // Only MV1008 (safe: false) in violations
     const unsafeViolations: Violation[] = [
-      { rule: "MV1008", severity: "warning", message: "no limits", resource: "Deployment/x" },
+      { rule: "MV1008", severity: "medium", message: "no limits", resource: "Deployment/x" },
     ];
     const reports = prepareFixReports(unsafeViolations, { "Deployment/x": "x.yaml" });
     const outPath = path.join(tmpDir, "fixes-empty.md");

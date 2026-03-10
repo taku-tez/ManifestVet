@@ -6,7 +6,7 @@ import {
 import { Violation } from "../src/rules/types";
 
 function v(rule: string): Violation {
-  return { rule, severity: "error", message: "test", resource: "Deployment/app" };
+  return { rule, severity: "high", message: "test", resource: "Deployment/app" };
 }
 
 describe("extractIgnoreDirectives", () => {

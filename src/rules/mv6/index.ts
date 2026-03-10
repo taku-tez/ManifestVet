@@ -96,7 +96,7 @@ function containerPath(
 // ---------------------------------------------------------------------------
 const mv6001: Rule = {
   id: "MV6001",
-  severity: "info",
+  severity: "low",
   description:
     "Deployment or StatefulSet is missing recommended Kubernetes labels (app.kubernetes.io/name, app.kubernetes.io/version, app.kubernetes.io/managed-by). These labels improve observability and tooling integration.",
   check(ctx: RuleContext): Violation[] {
@@ -112,7 +112,7 @@ const mv6001: Rule = {
       return [
         {
           rule: "MV6001",
-          severity: "info",
+          severity: "low",
           message: `${resource.kind} "${resource.metadata.name}" has no metadata.labels. Recommended labels: ${RECOMMENDED_LABELS.join(", ")}.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -130,7 +130,7 @@ const mv6001: Rule = {
       return [
         {
           rule: "MV6001",
-          severity: "info",
+          severity: "low",
           message: `${resource.kind} "${resource.metadata.name}" is missing all recommended labels. Include at least one of: ${RECOMMENDED_LABELS.join(", ")}.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -149,7 +149,7 @@ const mv6001: Rule = {
 // ---------------------------------------------------------------------------
 const mv6002: Rule = {
   id: "MV6002",
-  severity: "warning",
+  severity: "low",
   description:
     "Deployment has replicas set to 1 (or omitted, which defaults to 1). A single replica provides no high availability; if the pod crashes, there will be downtime until it is rescheduled.",
   check(ctx: RuleContext): Violation[] {
@@ -163,7 +163,7 @@ const mv6002: Rule = {
       return [
         {
           rule: "MV6002",
-          severity: "warning",
+          severity: "low",
           message: `Deployment "${resource.metadata.name}" has ${replicas === undefined || replicas === null ? "no replicas specified (defaults to 1)" : "replicas set to 1"}, which provides no high availability.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -182,7 +182,7 @@ const mv6002: Rule = {
 // ---------------------------------------------------------------------------
 const mv6003: Rule = {
   id: "MV6003",
-  severity: "warning",
+  severity: "low",
   description:
     "One or more containers are missing a livenessProbe. Liveness probes allow Kubernetes to detect and restart containers that are stuck in a broken state.",
   check(ctx: RuleContext): Violation[] {
@@ -196,7 +196,7 @@ const mv6003: Rule = {
       if (!container.livenessProbe) {
         violations.push({
           rule: "MV6003",
-          severity: "warning",
+          severity: "low",
           message: `Container "${container.name ?? index}" is missing a livenessProbe.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -215,7 +215,7 @@ const mv6003: Rule = {
 // ---------------------------------------------------------------------------
 const mv6004: Rule = {
   id: "MV6004",
-  severity: "warning",
+  severity: "low",
   description:
     "One or more containers are missing a readinessProbe. Readiness probes prevent traffic from being sent to pods that are not yet ready to handle requests.",
   check(ctx: RuleContext): Violation[] {
@@ -229,7 +229,7 @@ const mv6004: Rule = {
       if (!container.readinessProbe) {
         violations.push({
           rule: "MV6004",
-          severity: "warning",
+          severity: "low",
           message: `Container "${container.name ?? index}" is missing a readinessProbe.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -248,7 +248,7 @@ const mv6004: Rule = {
 // ---------------------------------------------------------------------------
 const mv6005: Rule = {
   id: "MV6005",
-  severity: "info",
+  severity: "low",
   description:
     "Deployment is missing podAntiAffinity. Without pod anti-affinity rules, multiple replicas may be scheduled on the same node, reducing fault tolerance.",
   check(ctx: RuleContext): Violation[] {
@@ -262,7 +262,7 @@ const mv6005: Rule = {
       return [
         {
           rule: "MV6005",
-          severity: "info",
+          severity: "low",
           message: `Deployment "${resource.metadata.name}" does not define podAntiAffinity. Replicas may be scheduled on the same node.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -281,7 +281,7 @@ const mv6005: Rule = {
 // ---------------------------------------------------------------------------
 const mv6006: Rule = {
   id: "MV6006",
-  severity: "info",
+  severity: "low",
   description:
     "Deployment does not use a RollingUpdate strategy. RollingUpdate allows zero-downtime deployments by gradually replacing old pods with new ones.",
   check(ctx: RuleContext): Violation[] {
@@ -296,7 +296,7 @@ const mv6006: Rule = {
       return [
         {
           rule: "MV6006",
-          severity: "info",
+          severity: "low",
           message: `Deployment "${resource.metadata.name}" does not define a deployment strategy. Explicitly set strategy.type to "RollingUpdate" for zero-downtime deployments.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -315,7 +315,7 @@ const mv6006: Rule = {
     return [
       {
         rule: "MV6006",
-        severity: "info",
+        severity: "low",
         message: `Deployment "${resource.metadata.name}" uses strategy type "${strategy.type ?? "unknown"}" instead of "RollingUpdate". This may cause downtime during deployments.`,
         resource: resourceId,
         namespace: resource.metadata.namespace,
@@ -331,7 +331,7 @@ const mv6006: Rule = {
 // ---------------------------------------------------------------------------
 const mv6007: Rule = {
   id: "MV6007",
-  severity: "info",
+  severity: "low",
   description:
     "One or more containers are missing a lifecycle.preStop hook. A preStop hook allows the container to gracefully shut down before receiving SIGTERM, enabling connection draining and cleanup.",
   check(ctx: RuleContext): Violation[] {
@@ -345,7 +345,7 @@ const mv6007: Rule = {
       if (!container.lifecycle?.preStop) {
         violations.push({
           rule: "MV6007",
-          severity: "info",
+          severity: "low",
           message: `Container "${container.name ?? index}" is missing a lifecycle.preStop hook.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -364,7 +364,7 @@ const mv6007: Rule = {
 // ---------------------------------------------------------------------------
 const mv6008: Rule = {
   id: "MV6008",
-  severity: "warning",
+  severity: "low",
   description:
     'Resource is deployed to the "default" namespace. Using the default namespace is discouraged because it makes it harder to manage resources, apply RBAC policies, and enforce resource quotas.',
   check(ctx: RuleContext): Violation[] {
@@ -377,7 +377,7 @@ const mv6008: Rule = {
     return [
       {
         rule: "MV6008",
-        severity: "warning",
+        severity: "low",
         message: `${resource.kind} "${resource.metadata.name}" is in the "default" namespace.`,
         resource: resourceId,
         namespace: resource.metadata.namespace,
@@ -393,7 +393,7 @@ const mv6008: Rule = {
 // ---------------------------------------------------------------------------
 const mv6009: Rule = {
   id: "MV6009",
-  severity: "error",
+  severity: "high",
   description:
     "Resource metadata.name is missing or empty. Every Kubernetes resource must have a unique name within its namespace.",
   check(ctx: RuleContext): Violation[] {
@@ -407,7 +407,7 @@ const mv6009: Rule = {
       return [
         {
           rule: "MV6009",
-          severity: "error",
+          severity: "high",
           message: `${resource.kind} has a missing or empty metadata.name.`,
           resource: resourceId,
           namespace: resource.metadata?.namespace,
@@ -426,7 +426,7 @@ const mv6009: Rule = {
 // ---------------------------------------------------------------------------
 const mv6010: Rule = {
   id: "MV6010",
-  severity: "info",
+  severity: "low",
   description:
     "Deployment does not set minReadySeconds. Without minReadySeconds, a new pod is considered available as soon as it is ready, which may not allow enough time to catch startup issues before rolling forward.",
   check(ctx: RuleContext): Violation[] {
@@ -440,7 +440,7 @@ const mv6010: Rule = {
       return [
         {
           rule: "MV6010",
-          severity: "info",
+          severity: "low",
           message: `Deployment "${resource.metadata.name}" does not set minReadySeconds (or it is set to 0). New pods will be considered available immediately after becoming ready.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -459,7 +459,7 @@ const mv6010: Rule = {
 // ---------------------------------------------------------------------------
 const mv6011: Rule = {
   id: "MV6011",
-  severity: "info",
+  severity: "low",
   description:
     'Containers should set terminationMessagePolicy to "FallbackToLogsOnError" to ensure useful termination messages are available even when the container does not write to the termination message file.',
   check(ctx: RuleContext): Violation[] {
@@ -474,7 +474,7 @@ const mv6011: Rule = {
       if (policy !== "FallbackToLogsOnError") {
         violations.push({
           rule: "MV6011",
-          severity: "info",
+          severity: "low",
           message: `Container "${container.name ?? index}" in ${resourceId} does not set terminationMessagePolicy to "FallbackToLogsOnError" (current: ${policy ?? "not set"}).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -493,7 +493,7 @@ const mv6011: Rule = {
 // ---------------------------------------------------------------------------
 const mv6012: Rule = {
   id: "MV6012",
-  severity: "info",
+  severity: "low",
   description:
     "Deployment should set revisionHistoryLimit to a reasonable value to control the number of old ReplicaSets retained. Keeping too many (default is 10) wastes etcd storage.",
   check(ctx: RuleContext): Violation[] {
@@ -507,7 +507,7 @@ const mv6012: Rule = {
       return [
         {
           rule: "MV6012",
-          severity: "info",
+          severity: "low",
           message: `Deployment "${resource.metadata.name}" has revisionHistoryLimit set to ${limit ?? "default (10)"}. Consider setting it to 3–5 to reduce etcd overhead.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -526,7 +526,7 @@ const mv6012: Rule = {
 // ---------------------------------------------------------------------------
 const mv6013: Rule = {
   id: "MV6013",
-  severity: "info",
+  severity: "low",
   description:
     'StatefulSet uses the default sequential pod management policy. Setting podManagementPolicy to "Parallel" can significantly reduce startup time when scaling or updating, unless strict ordering is required.',
   check(ctx: RuleContext): Violation[] {
@@ -541,7 +541,7 @@ const mv6013: Rule = {
       return [
         {
           rule: "MV6013",
-          severity: "info",
+          severity: "low",
           message: `StatefulSet "${resource.metadata.name}" uses podManagementPolicy "${policy ?? "OrderedReady (default)"}". Consider "Parallel" if pod ordering is not required.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -560,7 +560,7 @@ const mv6013: Rule = {
 // ---------------------------------------------------------------------------
 const mv6014: Rule = {
   id: "MV6014",
-  severity: "info",
+  severity: "low",
   description:
     "Container defines a livenessProbe but no startupProbe. Without a startupProbe, Kubernetes uses the livenessProbe during startup, which may kill a slow-starting container before it is ready.",
   check(ctx: RuleContext): Violation[] {
@@ -574,7 +574,7 @@ const mv6014: Rule = {
       if (container.livenessProbe && !container.startupProbe) {
         violations.push({
           rule: "MV6014",
-          severity: "info",
+          severity: "low",
           message: `Container "${container.name ?? index}" has a livenessProbe but no startupProbe. Add a startupProbe to protect slow-starting containers from premature restarts.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -593,7 +593,7 @@ const mv6014: Rule = {
 // ---------------------------------------------------------------------------
 const mv6015: Rule = {
   id: "MV6015",
-  severity: "info",
+  severity: "low",
   description: "Deployment with multiple replicas should have a PodDisruptionBudget to maintain availability during voluntary disruptions.",
   check(ctx: RuleContext): Violation[] {
     const { resource, allResources } = ctx;
@@ -619,7 +619,7 @@ const mv6015: Rule = {
     if (!hasPDB) {
       return [{
         rule: "MV6015",
-        severity: "info",
+        severity: "low",
         message: `Deployment "${resource.metadata.name}" has ${replicas} replicas but no matching PodDisruptionBudget.`,
         resource: resourceId,
         namespace: resource.metadata?.namespace,
@@ -671,7 +671,7 @@ const DEPRECATED_API_MAP = new Map(DEPRECATED_APIS.map((d) => [d.apiVersion, d])
 
 const mv6016: Rule = {
   id: "MV6016",
-  severity: "error",
+  severity: "medium",
   description:
     "Resource uses a deprecated and removed Kubernetes API version. Manifests using removed APIs will fail on newer clusters.",
   check(ctx: RuleContext): Violation[] {
@@ -686,7 +686,7 @@ const mv6016: Rule = {
     return [
       {
         rule: "MV6016",
-        severity: "error",
+        severity: "medium",
         message: `${resourceId} uses deprecated apiVersion "${apiVersion}" (removed in Kubernetes ${deprecated.removedIn}). Migrate to ${deprecated.replacement}.`,
         resource: resourceId,
         namespace: resource.metadata?.namespace,

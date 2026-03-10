@@ -72,9 +72,9 @@ export function evalRegoPolicy(
 
   return rawViolations.map((v: any): Violation => ({
     rule: String(v.rule ?? "REGO_UNKNOWN"),
-    severity: (["error", "warning", "info"].includes(v.severity)
+    severity: (["critical", "high", "medium", "low", "info"].includes(v.severity)
       ? v.severity
-      : "warning") as Severity,
+      : "medium") as Severity,
     message: String(v.message ?? "Rego policy violation"),
     resource: String(v.resource ?? "unknown"),
     namespace: v.namespace ? String(v.namespace) : undefined,

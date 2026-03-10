@@ -3,10 +3,12 @@ import { ALL_RULES } from "../rules";
 
 function severityToSarif(severity: Severity): string {
   switch (severity) {
-    case "error":
+    case "critical":
+    case "high":
       return "error";
-    case "warning":
+    case "medium":
       return "warning";
+    case "low":
     case "info":
       return "note";
   }

@@ -11,9 +11,11 @@ function escapeHtml(s: string): string {
 
 function severityBadge(severity: Severity): string {
   const colors: Record<Severity, string> = {
-    error: "#d73a49",
-    warning: "#e36209",
-    info: "#0366d6",
+    critical: "#b31d28",
+    high:     "#d73a49",
+    medium:   "#e36209",
+    low:      "#28a745",
+    info:     "#0366d6",
   };
   const color = colors[severity];
   return `<span style="background:${color};color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;font-weight:600">${severity}</span>`;
@@ -30,9 +32,15 @@ function groupByResource(violations: Violation[]): Map<string, Violation[]> {
 }
 
 export function formatHTML(violations: Violation[], title = "ManifestVet Report"): string {
-  const errors = violations.filter((v) => v.severity === "error").length;
-  const warnings = violations.filter((v) => v.severity === "warning").length;
-  const infos = violations.filter((v) => v.severity === "info").length;
+  const counts: Partial<Record<Severity, number>> = {};
+  for (const v of violations) {
+    counts[v.severity] = (counts[v.severity] ?? 0) + 1;
+  }
+  const critical = counts.critical ?? 0;
+  const high     = counts.high     ?? 0;
+  const medium   = counts.medium   ?? 0;
+  const low      = counts.low      ?? 0;
+  const info     = counts.info     ?? 0;
 
   const grouped = groupByResource(violations);
 
@@ -69,11 +77,9 @@ export function formatHTML(violations: Violation[], title = "ManifestVet Report"
     .join("");
 
   const summaryColor =
-    errors > 0 ? "#d73a49" : warnings > 0 ? "#e36209" : "#28a745";
-  const summaryText =
-    violations.length === 0
-      ? "No issues found"
-      : `${errors} error${errors !== 1 ? "s" : ""}, ${warnings} warning${warnings !== 1 ? "s" : ""}, ${infos} info`;
+    critical > 0 ? "#b31d28" :
+    high     > 0 ? "#d73a49" :
+    medium   > 0 ? "#e36209" : "#28a745";
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -98,9 +104,11 @@ export function formatHTML(violations: Violation[], title = "ManifestVet Report"
     <h1>ManifestVet Report</h1>
     <p class="generated">Generated: ${new Date().toISOString()}</p>
     <div class="summary">
-      <div class="stat"><div class="stat-num" style="color:#d73a49">${errors}</div><div class="stat-label">Errors</div></div>
-      <div class="stat"><div class="stat-num" style="color:#e36209">${warnings}</div><div class="stat-label">Warnings</div></div>
-      <div class="stat"><div class="stat-num" style="color:#0366d6">${infos}</div><div class="stat-label">Info</div></div>
+      <div class="stat"><div class="stat-num" style="color:#b31d28">${critical}</div><div class="stat-label">Critical</div></div>
+      <div class="stat"><div class="stat-num" style="color:#d73a49">${high}</div><div class="stat-label">High</div></div>
+      <div class="stat"><div class="stat-num" style="color:#e36209">${medium}</div><div class="stat-label">Medium</div></div>
+      <div class="stat"><div class="stat-num" style="color:#28a745">${low}</div><div class="stat-label">Low</div></div>
+      <div class="stat"><div class="stat-num" style="color:#0366d6">${info}</div><div class="stat-label">Info</div></div>
       <div class="stat"><div class="stat-num" style="color:${summaryColor}">${violations.length}</div><div class="stat-label">Total</div></div>
     </div>
     ${violations.length === 0 ? '<p style="color:#28a745;font-weight:600">✓ No issues found.</p>' : resourceSections}

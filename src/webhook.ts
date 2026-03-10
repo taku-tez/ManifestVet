@@ -45,7 +45,7 @@ export interface WebhookOptions {
   port: number;
   certFile?: string;
   keyFile?: string;
-  severity: "error" | "warning" | "info";
+  severity: "critical" | "high" | "medium" | "low" | "info";
   extraRules?: Rule[];
 }
 
@@ -97,12 +97,12 @@ function handleAdmission(
   }
 
   const violations: Violation[] = lint([resource], config, extraRules);
-  const errors = violations.filter((v) => v.severity === "error");
-  const warnings = violations.filter((v) => v.severity === "warning");
+  const blocking = violations.filter((v) => v.severity === "critical" || v.severity === "high");
+  const nonBlocking = violations.filter((v) => v.severity !== "critical" && v.severity !== "high");
 
-  const allowed = errors.length === 0;
+  const allowed = blocking.length === 0;
 
-  const warningMessages = warnings.map(
+  const warningMessages = nonBlocking.map(
     (v) => `[${v.rule}] ${v.message}`
   );
 
@@ -123,17 +123,17 @@ function handleAdmission(
       warnings: [
         ...warningMessages,
         ...(!allowed
-          ? errors.map((v) => `[${v.rule}] ${v.message}`)
+          ? blocking.map((v) => `[${v.rule}] ${v.message}`)
           : []),
       ],
     },
   };
 
   if (!allowed) {
-    const msg = errors.map((v) => `[${v.rule}] ${v.message}`).join("; ");
+    const msg = blocking.map((v) => `[${v.rule}] ${v.message}`).join("; ");
     response.response.status = {
       code: 403,
-      message: `ManifestVet: ${errors.length} security violation(s) found: ${msg}`,
+      message: `ManifestVet: ${blocking.length} security violation(s) found: ${msg}`,
     };
   }
 

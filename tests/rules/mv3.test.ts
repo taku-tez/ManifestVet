@@ -41,7 +41,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV3001");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("my-svc");
     expect(violations[0].message).toContain("NodePort");
     expect(violations[0].path).toBe("spec.type");
@@ -154,7 +154,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV3002");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("web");
     expect(violations[0].message).toContain("8080");
     expect(violations[0].path).toBe("spec.containers[0].ports[0].hostPort");
@@ -357,7 +357,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV3003");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("allow-all-ingress");
     expect(violations[0].message).toContain("empty array");
     expect(violations[0].path).toBe("spec.ingress[0].from");
@@ -516,7 +516,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV3004");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("allow-all-egress");
     expect(violations[0].message).toContain("empty array");
     expect(violations[0].path).toBe("spec.egress[0].to");
@@ -1006,7 +1006,7 @@ spec:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV3007");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("no-tls-ingress");
     expect(violations[0].message).toContain("TLS");
     expect(violations[0].path).toBe("spec.tls");
@@ -1173,7 +1173,7 @@ metadata:
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV3008");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("my-namespace");
     expect(violations[0].resource).toBe("Namespace/my-namespace");
   });

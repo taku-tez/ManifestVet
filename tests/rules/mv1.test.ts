@@ -53,7 +53,7 @@ describe("MV1001 - runAsNonRoot", () => {
     const violations = checkRule("MV1001", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1001");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("app");
     expect(violations[0].message).toContain("runAsNonRoot");
     expect(violations[0].path).toBe(
@@ -174,7 +174,7 @@ describe("MV1002 - allowPrivilegeEscalation", () => {
     const violations = checkRule("MV1002", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1002");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("allowPrivilegeEscalation");
   });
 
@@ -284,7 +284,7 @@ spec:
     const violations = checkRule("MV1003", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1003");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("privileged mode");
   });
 
@@ -369,7 +369,7 @@ spec:
     const violations = checkRule("MV1004", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1004");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("hostNetwork");
     expect(violations[0].path).toBe("spec.template.spec.hostNetwork");
   });
@@ -448,7 +448,7 @@ spec:
     const violations = checkRule("MV1005", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1005");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("hostPID");
     expect(violations[0].path).toBe("spec.template.spec.hostPID");
   });
@@ -535,7 +535,7 @@ spec:
     const violations = checkRule("MV1006", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1006");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("hostIPC");
     expect(violations[0].path).toBe("spec.template.spec.hostIPC");
   });
@@ -625,7 +625,7 @@ spec:
     const violations = checkRule("MV1007", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1007");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("high");
     expect(violations[0].message).toContain("NET_ADMIN");
   });
 
@@ -761,7 +761,7 @@ describe("MV1008 - resource limits", () => {
     const violations = checkRule("MV1008", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1008");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("cpu");
     expect(violations[0].message).toContain("memory");
   });
@@ -961,7 +961,7 @@ describe("MV1010 - readOnlyRootFilesystem", () => {
     const violations = checkRule("MV1010", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1010");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("readOnlyRootFilesystem");
   });
 
@@ -1042,7 +1042,7 @@ describe("MV1011 - seccomp profile", () => {
     const violations = checkRule("MV1011", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1011");
-    expect(violations[0].severity).toBe("info");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("seccomp");
     expect(violations[0].path).toBe(
       "spec.template.spec.securityContext.seccompProfile.type"
@@ -1154,7 +1154,7 @@ describe("MV1012 - capabilities drop ALL", () => {
     const violations = checkRule("MV1012", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1012");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("drop ALL");
   });
 
@@ -1268,7 +1268,7 @@ spec:
     const violations = checkRule("MV1013", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1013");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("runAsUser");
     expect(violations[0].message).toContain("root");
   });
@@ -1388,7 +1388,7 @@ spec:
     const violations = checkRule("MV1014", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1014");
-    expect(violations[0].severity).toBe("error");
+    expect(violations[0].severity).toBe("critical");
     expect(violations[0].message).toContain("Unmasked");
   });
 
@@ -1473,7 +1473,7 @@ spec:
     const violations = checkRule("MV1015", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1015");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("default");
     expect(violations[0].path).toBe(
       "spec.template.spec.serviceAccountName"
@@ -1561,7 +1561,7 @@ describe("MV1016 - automountServiceAccountToken", () => {
     const violations = checkRule("MV1016", DEPLOYMENT_BASE);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1016");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("medium");
     expect(violations[0].message).toContain("automountServiceAccountToken");
     expect(violations[0].path).toBe(
       "spec.template.spec.automountServiceAccountToken"
@@ -1876,7 +1876,7 @@ spec:
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1017");
     expect(violations[0].resource).toBe("Pod/shared-pid-pod");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
   });
 
   it("should flag Deployment with shareProcessNamespace: true", () => {
@@ -1945,7 +1945,7 @@ spec:
     const violations = checkRule("MV1018", yaml);
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV1018");
-    expect(violations[0].severity).toBe("warning");
+    expect(violations[0].severity).toBe("low");
     expect(violations[0].message).toContain("stdin");
   });
 

@@ -117,7 +117,7 @@ function matchesSensitivePattern(name: string): boolean {
 // ---------------------------------------------------------------------------
 const mv5001: Rule = {
   id: "MV5001",
-  severity: "error",
+  severity: "high",
   description:
     "Environment variable with a sensitive name has a hardcoded value. Secrets should be injected via Secret references (valueFrom.secretKeyRef) rather than hardcoded in the manifest.",
   check(ctx: RuleContext): Violation[] {
@@ -141,7 +141,7 @@ const mv5001: Rule = {
         ) {
           violations.push({
             rule: "MV5001",
-            severity: "error",
+            severity: "high",
             message: `Container "${container.name ?? index}" has environment variable "${envName}" with a hardcoded sensitive value.`,
             resource: resourceId,
             namespace: resource.metadata.namespace,
@@ -161,7 +161,7 @@ const mv5001: Rule = {
 // ---------------------------------------------------------------------------
 const mv5002: Rule = {
   id: "MV5002",
-  severity: "warning",
+  severity: "medium",
   description:
     'Secret of type "Opaque" contains keys with sensitive names in its data field. Sensitive data should be properly managed through external secret management solutions.',
   check(ctx: RuleContext): Violation[] {
@@ -181,7 +181,7 @@ const mv5002: Rule = {
         if (matchesSensitivePattern(key)) {
           violations.push({
             rule: "MV5002",
-            severity: "warning",
+            severity: "medium",
             message: `Secret "${resource.metadata.name}" has sensitive key "${key}" in its data field.`,
             resource: resourceId,
             namespace: resource.metadata.namespace,
@@ -201,7 +201,7 @@ const mv5002: Rule = {
 // ---------------------------------------------------------------------------
 const mv5003: Rule = {
   id: "MV5003",
-  severity: "warning",
+  severity: "low",
   description:
     "ConfigMap contains keys with sensitive names. Sensitive data should be stored in Secrets, not ConfigMaps, since ConfigMaps are not encrypted at rest.",
   check(ctx: RuleContext): Violation[] {
@@ -217,7 +217,7 @@ const mv5003: Rule = {
         if (matchesSensitivePattern(key)) {
           violations.push({
             rule: "MV5003",
-            severity: "warning",
+            severity: "low",
             message: `ConfigMap "${resource.metadata.name}" has a key "${key}" that appears to contain sensitive data.`,
             resource: resourceId,
             namespace: resource.metadata.namespace,
@@ -237,7 +237,7 @@ const mv5003: Rule = {
 // ---------------------------------------------------------------------------
 const mv5004: Rule = {
   id: "MV5004",
-  severity: "warning",
+  severity: "info",
   description:
     "Pod spec uses a hostPath volume. hostPath volumes mount directories from the host node's filesystem, which can pose security risks by exposing the host to the container.",
   check(ctx: RuleContext): Violation[] {
@@ -255,7 +255,7 @@ const mv5004: Rule = {
       if (volume.hostPath) {
         violations.push({
           rule: "MV5004",
-          severity: "warning",
+          severity: "info",
           message: `Volume "${volume.name ?? volumeIndex}" uses hostPath "${volume.hostPath.path ?? ""}", which mounts a host directory into the pod.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,

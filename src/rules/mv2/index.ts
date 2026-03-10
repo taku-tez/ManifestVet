@@ -20,7 +20,7 @@ function isBindingKind(kind: string): boolean {
 // ---------------------------------------------------------------------------
 const mv2001: Rule = {
   id: "MV2001",
-  severity: "error",
+  severity: "high",
   description:
     "Role/ClusterRole should not use wildcard (*) verbs. Wildcard verbs grant all actions on the matched resources.",
   check(ctx: RuleContext): Violation[] {
@@ -37,7 +37,7 @@ const mv2001: Rule = {
       if (verbs.includes("*")) {
         violations.push({
           rule: "MV2001",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} grants wildcard (*) verbs in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -56,7 +56,7 @@ const mv2001: Rule = {
 // ---------------------------------------------------------------------------
 const mv2002: Rule = {
   id: "MV2002",
-  severity: "error",
+  severity: "high",
   description:
     "Role/ClusterRole should not use wildcard (*) resources. Wildcard resources grant access to every resource type.",
   check(ctx: RuleContext): Violation[] {
@@ -73,7 +73,7 @@ const mv2002: Rule = {
       if (resources.includes("*")) {
         violations.push({
           rule: "MV2002",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} grants access to wildcard (*) resources in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -92,7 +92,7 @@ const mv2002: Rule = {
 // ---------------------------------------------------------------------------
 const mv2003: Rule = {
   id: "MV2003",
-  severity: "warning",
+  severity: "medium",
   description:
     "Role/ClusterRole should not use wildcard (*) apiGroups. Wildcard apiGroups grant access across all API groups.",
   check(ctx: RuleContext): Violation[] {
@@ -109,7 +109,7 @@ const mv2003: Rule = {
       if (apiGroups.includes("*")) {
         violations.push({
           rule: "MV2003",
-          severity: "warning",
+          severity: "medium",
           message: `${resourceId} uses wildcard (*) apiGroups in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -128,7 +128,7 @@ const mv2003: Rule = {
 // ---------------------------------------------------------------------------
 const mv2004: Rule = {
   id: "MV2004",
-  severity: "error",
+  severity: "critical",
   description:
     "ClusterRoleBinding should not bind to the cluster-admin ClusterRole. This grants unrestricted superuser access.",
   check(ctx: RuleContext): Violation[] {
@@ -141,7 +141,7 @@ const mv2004: Rule = {
       return [
         {
           rule: "MV2004",
-          severity: "error",
+          severity: "critical",
           message: `${resourceId} binds to the cluster-admin ClusterRole, granting unrestricted superuser access.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -160,7 +160,7 @@ const mv2004: Rule = {
 // ---------------------------------------------------------------------------
 const mv2005: Rule = {
   id: "MV2005",
-  severity: "warning",
+  severity: "medium",
   description:
     "ServiceAccount should explicitly set automountServiceAccountToken to false unless the token is required.",
   check(ctx: RuleContext): Violation[] {
@@ -176,7 +176,7 @@ const mv2005: Rule = {
       return [
         {
           rule: "MV2005",
-          severity: "warning",
+          severity: "medium",
           message: `ServiceAccount "${resource.metadata.name}" does not set automountServiceAccountToken: false. All pods using this SA will mount the token unless overridden at the pod level (see MV1016).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -195,7 +195,7 @@ const mv2005: Rule = {
 // ---------------------------------------------------------------------------
 const mv2006: Rule = {
   id: "MV2006",
-  severity: "warning",
+  severity: "medium",
   description:
     "Role/ClusterRole should not grant access to secrets unless absolutely necessary.",
   check(ctx: RuleContext): Violation[] {
@@ -212,7 +212,7 @@ const mv2006: Rule = {
       if (resources.includes("secrets")) {
         violations.push({
           rule: "MV2006",
-          severity: "warning",
+          severity: "medium",
           message: `${resourceId} grants access to secrets in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -231,7 +231,7 @@ const mv2006: Rule = {
 // ---------------------------------------------------------------------------
 const mv2007: Rule = {
   id: "MV2007",
-  severity: "warning",
+  severity: "medium",
   description:
     "Role/ClusterRole should not grant exec access to pods. Pod exec allows arbitrary command execution inside containers.",
   check(ctx: RuleContext): Violation[] {
@@ -248,7 +248,7 @@ const mv2007: Rule = {
       if (resources.includes("pods/exec")) {
         violations.push({
           rule: "MV2007",
-          severity: "warning",
+          severity: "medium",
           message: `${resourceId} grants exec access to pods in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -267,7 +267,7 @@ const mv2007: Rule = {
 // ---------------------------------------------------------------------------
 const mv2008: Rule = {
   id: "MV2008",
-  severity: "warning",
+  severity: "medium",
   description:
     "ClusterRole should not grant impersonation permissions. Impersonation allows acting as other users, groups, or service accounts.",
   check(ctx: RuleContext): Violation[] {
@@ -293,7 +293,7 @@ const mv2008: Rule = {
       if (hasImpersonateVerb && hasImpersonationResource) {
         violations.push({
           rule: "MV2008",
-          severity: "warning",
+          severity: "medium",
           message: `${resourceId} grants impersonation permissions in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -313,7 +313,7 @@ const mv2008: Rule = {
 // ---------------------------------------------------------------------------
 const mv2009: Rule = {
   id: "MV2009",
-  severity: "error",
+  severity: "critical",
   description:
     "RoleBinding/ClusterRoleBinding should not bind to system:unauthenticated or system:anonymous.",
   check(ctx: RuleContext): Violation[] {
@@ -331,7 +331,7 @@ const mv2009: Rule = {
       if (dangerousSubjects.includes(subject.name)) {
         violations.push({
           rule: "MV2009",
-          severity: "error",
+          severity: "critical",
           message: `${resourceId} binds to ${subject.name} in subjects[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -350,7 +350,7 @@ const mv2009: Rule = {
 // ---------------------------------------------------------------------------
 const mv2010: Rule = {
   id: "MV2010",
-  severity: "warning",
+  severity: "medium",
   description:
     "ClusterRole grants get/list/watch on all resources (*). This provides broad read access to sensitive data across the entire cluster (Secrets, ConfigMaps, etc.) and violates least-privilege.",
   check(ctx: RuleContext): Violation[] {
@@ -374,7 +374,7 @@ const mv2010: Rule = {
       ) {
         violations.push({
           rule: "MV2010",
-          severity: "warning",
+          severity: "medium",
           message: `ClusterRole "${resource.metadata.name}" grants ${verbs.filter(v => readVerbs.has(v) || v === "*").join("/")} on all resources (*) in rules[${i}].`,
           resource: resourceId,
           namespace: resource.metadata.namespace,

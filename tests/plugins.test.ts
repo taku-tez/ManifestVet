@@ -18,7 +18,7 @@ module.exports = {
   name: "test-plugin",
   rules: [{
     id: "TEST001",
-    severity: "warning",
+    severity: "medium",
     description: "Test rule",
     check() { return []; },
   }],
@@ -27,7 +27,7 @@ module.exports = {
     const rules = loadPlugin(pluginPath);
     expect(rules).toHaveLength(1);
     expect(rules[0].id).toBe("TEST001");
-    expect(rules[0].severity).toBe("warning");
+    expect(rules[0].severity).toBe("medium");
   });
 
   it("rule check function works correctly", () => {
@@ -35,13 +35,13 @@ module.exports = {
 module.exports = {
   rules: [{
     id: "TEST002",
-    severity: "error",
+    severity: "high",
     description: "Deployment must not be in default namespace",
     check({ resource }) {
       if (resource.kind === "Deployment" && resource.metadata.namespace === "default") {
         return [{
           rule: "TEST002",
-          severity: "error",
+          severity: "high",
           message: "Deployment must not be in default namespace",
           resource: resource.kind + "/" + resource.metadata.name,
         }];
@@ -77,7 +77,7 @@ module.exports = {
   it("throws for rule without id", () => {
     const pluginPath = writeTmpPlugin(`
 module.exports = {
-  rules: [{ severity: "warning", check() { return []; } }],
+  rules: [{ severity: "medium", check() { return []; } }],
 };
 `);
     expect(() => loadPlugin(pluginPath)).toThrow("id");
@@ -86,7 +86,7 @@ module.exports = {
   it("throws for rule without check function", () => {
     const pluginPath = writeTmpPlugin(`
 module.exports = {
-  rules: [{ id: "TEST003", severity: "warning" }],
+  rules: [{ id: "TEST003", severity: "medium" }],
 };
 `);
     expect(() => loadPlugin(pluginPath)).toThrow("check");

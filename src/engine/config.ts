@@ -1,6 +1,6 @@
 export interface ManifestVetConfig {
   ignore: string[];
-  severity: "error" | "warning" | "info";
+  severity: "critical" | "high" | "medium" | "low" | "info";
   format: "tty" | "json" | "sarif";
   noColor: boolean;
 }

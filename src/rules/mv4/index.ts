@@ -144,7 +144,7 @@ function isPrivateRegistry(image: string): boolean {
 // ---------------------------------------------------------------------------
 const mv4001: Rule = {
   id: "MV4001",
-  severity: "error",
+  severity: "medium",
   description:
     'Container image tag is "latest" or missing. Images should be pinned to a specific version tag for reproducibility and security.',
   check(ctx: RuleContext): Violation[] {
@@ -160,7 +160,7 @@ const mv4001: Rule = {
       if (isLatestOrUntagged(image)) {
         violations.push({
           rule: "MV4001",
-          severity: "error",
+          severity: "medium",
           message: `Container "${container.name ?? index}" uses image "${image}" which has no tag or uses the "latest" tag.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -214,7 +214,7 @@ const mv4002: Rule = {
 // ---------------------------------------------------------------------------
 const mv4003: Rule = {
   id: "MV4003",
-  severity: "warning",
+  severity: "low",
   description:
     'Container imagePullPolicy is set to "Never". This means the image will never be pulled from a registry and must already exist on the node.',
   check(ctx: RuleContext): Violation[] {
@@ -228,7 +228,7 @@ const mv4003: Rule = {
       if (container.imagePullPolicy === "Never") {
         violations.push({
           rule: "MV4003",
-          severity: "warning",
+          severity: "low",
           message: `Container "${container.name ?? index}" has imagePullPolicy set to "Never".`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -247,7 +247,7 @@ const mv4003: Rule = {
 // ---------------------------------------------------------------------------
 const mv4004: Rule = {
   id: "MV4004",
-  severity: "warning",
+  severity: "medium",
   description:
     'Container imagePullPolicy is "IfNotPresent" but the image has no specific version tag and no sha256 digest. This combination may result in stale or unexpected images being used.',
   check(ctx: RuleContext): Violation[] {
@@ -265,7 +265,7 @@ const mv4004: Rule = {
       if (isLatestOrUntagged(image) && !hasDigest(image)) {
         violations.push({
           rule: "MV4004",
-          severity: "warning",
+          severity: "medium",
           message: `Container "${container.name ?? index}" has imagePullPolicy "IfNotPresent" with an unpinned image "${image}" (no version tag and no digest).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -284,7 +284,7 @@ const mv4004: Rule = {
 // ---------------------------------------------------------------------------
 const mv4005: Rule = {
   id: "MV4005",
-  severity: "warning",
+  severity: "medium",
   description:
     'Init container image tag is "latest" or missing. Init containers run before app containers and should be pinned to a specific version.',
   check(ctx: RuleContext): Violation[] {
@@ -304,7 +304,7 @@ const mv4005: Rule = {
       if (isLatestOrUntagged(image)) {
         violations.push({
           rule: "MV4005",
-          severity: "warning",
+          severity: "medium",
           message: `Init container "${container.name ?? index}" uses image "${image}" which has no tag or uses the "latest" tag.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,

@@ -1,9 +1,11 @@
 import { Violation, Severity } from "../rules/types";
 
 const COLORS = {
+  brightRed: "\x1b[91m",
   red: "\x1b[31m",
   yellow: "\x1b[33m",
   cyan: "\x1b[36m",
+  blue: "\x1b[34m",
   dim: "\x1b[2m",
   bold: "\x1b[1m",
   reset: "\x1b[0m",
@@ -12,12 +14,11 @@ const COLORS = {
 function severityColor(severity: Severity, noColor: boolean): string {
   if (noColor) return "";
   switch (severity) {
-    case "error":
-      return COLORS.red;
-    case "warning":
-      return COLORS.yellow;
-    case "info":
-      return COLORS.cyan;
+    case "critical": return COLORS.brightRed;
+    case "high":     return COLORS.red;
+    case "medium":   return COLORS.yellow;
+    case "low":      return COLORS.cyan;
+    case "info":     return COLORS.blue;
   }
 }
 
@@ -57,7 +58,7 @@ export function formatTTY(
   for (const v of violations) {
     const color = severityColor(v.severity, noColor);
     const rst = reset(noColor);
-    const sev = v.severity.padEnd(7);
+    const sev = v.severity.padEnd(8);
     const rule = v.rule.padEnd(8);
     lines.push(
       `  ${color}${rule}${rst}  ${color}${sev}${rst}  ${v.resource}  ${v.message}`
@@ -71,17 +72,19 @@ export function formatTTY(
 
   lines.push("");
 
-  const errors = violations.filter((v) => v.severity === "error").length;
-  const warnings = violations.filter((v) => v.severity === "warning").length;
-  const infos = violations.filter((v) => v.severity === "info").length;
+  const counts: Partial<Record<Severity, number>> = {};
+  for (const v of violations) {
+    counts[v.severity] = (counts[v.severity] ?? 0) + 1;
+  }
 
   const parts: string[] = [];
-  if (errors > 0)
-    parts.push(`${severityColor("error", noColor)}${errors} error${errors !== 1 ? "s" : ""}${reset(noColor)}`);
-  if (warnings > 0)
-    parts.push(`${severityColor("warning", noColor)}${warnings} warning${warnings !== 1 ? "s" : ""}${reset(noColor)}`);
-  if (infos > 0)
-    parts.push(`${severityColor("info", noColor)}${infos} info${reset(noColor)}`);
+  const order: Severity[] = ["critical", "high", "medium", "low", "info"];
+  for (const sev of order) {
+    const n = counts[sev];
+    if (n && n > 0) {
+      parts.push(`${severityColor(sev, noColor)}${n} ${sev}${reset(noColor)}`);
+    }
+  }
 
   lines.push(`  ${parts.join(", ")}`);
   lines.push("");

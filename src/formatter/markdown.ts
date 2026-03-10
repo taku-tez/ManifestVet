@@ -2,9 +2,11 @@ import { Violation, Severity } from "../rules/types";
 
 function severityEmoji(severity: Severity): string {
   switch (severity) {
-    case "error":   return "🔴";
-    case "warning": return "🟡";
-    case "info":    return "🔵";
+    case "critical": return "🔴";
+    case "high":     return "🟠";
+    case "medium":   return "🟡";
+    case "low":      return "🟢";
+    case "info":     return "🔵";
   }
 }
 
@@ -19,9 +21,15 @@ function groupByResource(violations: Violation[]): Map<string, Violation[]> {
 }
 
 export function formatMarkdown(violations: Violation[]): string {
-  const errors   = violations.filter((v) => v.severity === "error").length;
-  const warnings = violations.filter((v) => v.severity === "warning").length;
-  const infos    = violations.filter((v) => v.severity === "info").length;
+  const counts: Partial<Record<Severity, number>> = {};
+  for (const v of violations) {
+    counts[v.severity] = (counts[v.severity] ?? 0) + 1;
+  }
+  const critical = counts.critical ?? 0;
+  const high     = counts.high     ?? 0;
+  const medium   = counts.medium   ?? 0;
+  const low      = counts.low      ?? 0;
+  const info     = counts.info     ?? 0;
 
   const lines: string[] = [];
 
@@ -39,9 +47,11 @@ export function formatMarkdown(violations: Violation[]): string {
     count > 0 ? `![${label}: ${count}](https://img.shields.io/badge/${label}-${count}-${color})` : "";
 
   const badges = [
-    badge("errors", errors, "critical"),
-    badge("warnings", warnings, "important"),
-    badge("info", infos, "informational"),
+    badge("critical", critical, "critical"),
+    badge("high",     high,     "red"),
+    badge("medium",   medium,   "important"),
+    badge("low",      low,      "yellow"),
+    badge("info",     info,     "informational"),
   ].filter(Boolean);
 
   if (badges.length) {
@@ -52,9 +62,11 @@ export function formatMarkdown(violations: Violation[]): string {
   // Summary table
   lines.push("| Severity | Count |");
   lines.push("|----------|-------|");
-  if (errors   > 0) lines.push(`| 🔴 Error   | ${errors}   |`);
-  if (warnings > 0) lines.push(`| 🟡 Warning | ${warnings} |`);
-  if (infos    > 0) lines.push(`| 🔵 Info    | ${infos}    |`);
+  if (critical > 0) lines.push(`| 🔴 Critical | ${critical} |`);
+  if (high     > 0) lines.push(`| 🟠 High     | ${high}     |`);
+  if (medium   > 0) lines.push(`| 🟡 Medium   | ${medium}   |`);
+  if (low      > 0) lines.push(`| 🟢 Low      | ${low}      |`);
+  if (info     > 0) lines.push(`| 🔵 Info     | ${info}     |`);
   lines.push("");
 
   // Violations by resource

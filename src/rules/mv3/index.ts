@@ -95,7 +95,7 @@ function podSpecPath(resource: RuleContext["resource"], suffix?: string): string
 // ---------------------------------------------------------------------------
 const mv3001: Rule = {
   id: "MV3001",
-  severity: "warning",
+  severity: "low",
   description:
     "Service should not use type NodePort. NodePort exposes the service on each node's IP at a static port, widening the attack surface.",
   check(ctx: RuleContext): Violation[] {
@@ -108,7 +108,7 @@ const mv3001: Rule = {
       return [
         {
           rule: "MV3001",
-          severity: "warning",
+          severity: "low",
           message: `${resourceId} uses Service type NodePort, which exposes the service on every node's IP.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -127,7 +127,7 @@ const mv3001: Rule = {
 // ---------------------------------------------------------------------------
 const mv3002: Rule = {
   id: "MV3002",
-  severity: "warning",
+  severity: "low",
   description:
     "Containers should not set hostPort. Using hostPort binds the container port directly to the host, limiting scheduling and expanding attack surface.",
   check(ctx: RuleContext): Violation[] {
@@ -143,7 +143,7 @@ const mv3002: Rule = {
         if (ports[p].hostPort) {
           violations.push({
             rule: "MV3002",
-            severity: "warning",
+            severity: "low",
             message: `Container "${container.name ?? index}" sets hostPort ${ports[p].hostPort} in ports[${p}].`,
             resource: resourceId,
             namespace: resource.metadata.namespace,
@@ -163,7 +163,7 @@ const mv3002: Rule = {
 // ---------------------------------------------------------------------------
 const mv3003: Rule = {
   id: "MV3003",
-  severity: "error",
+  severity: "high",
   description:
     "NetworkPolicy should not allow all ingress traffic. Per Kubernetes semantics, an ingress rule with no from field, an empty from array, or a from containing an empty object permits traffic from any source.",
   check(ctx: RuleContext): Violation[] {
@@ -183,7 +183,7 @@ const mv3003: Rule = {
       if (from === undefined) {
         violations.push({
           rule: "MV3003",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} allows all ingress traffic in spec.ingress[${i}] (no from field — matches all sources per Kubernetes NetworkPolicy semantics).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -197,7 +197,7 @@ const mv3003: Rule = {
       if (Array.isArray(from) && from.length === 0) {
         violations.push({
           rule: "MV3003",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} allows all ingress traffic in spec.ingress[${i}] (from is an empty array).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -211,7 +211,7 @@ const mv3003: Rule = {
       if (Array.isArray(from) && from.some((entry: any) => typeof entry === "object" && entry !== null && Object.keys(entry).length === 0)) {
         violations.push({
           rule: "MV3003",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} allows all ingress traffic in spec.ingress[${i}] (from contains an empty object).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -230,7 +230,7 @@ const mv3003: Rule = {
 // ---------------------------------------------------------------------------
 const mv3004: Rule = {
   id: "MV3004",
-  severity: "error",
+  severity: "high",
   description:
     "NetworkPolicy should not allow all egress traffic. Per Kubernetes semantics, an egress rule with no to field, an empty to array, or a to containing an empty object permits traffic to any destination.",
   check(ctx: RuleContext): Violation[] {
@@ -250,7 +250,7 @@ const mv3004: Rule = {
       if (to === undefined) {
         violations.push({
           rule: "MV3004",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} allows all egress traffic in spec.egress[${i}] (no to field — matches all destinations per Kubernetes NetworkPolicy semantics).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -264,7 +264,7 @@ const mv3004: Rule = {
       if (Array.isArray(to) && to.length === 0) {
         violations.push({
           rule: "MV3004",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} allows all egress traffic in spec.egress[${i}] (to is an empty array).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -278,7 +278,7 @@ const mv3004: Rule = {
       if (Array.isArray(to) && to.some((entry: any) => typeof entry === "object" && entry !== null && Object.keys(entry).length === 0)) {
         violations.push({
           rule: "MV3004",
-          severity: "error",
+          severity: "high",
           message: `${resourceId} allows all egress traffic in spec.egress[${i}] (to contains an empty object).`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -366,7 +366,7 @@ const mv3006: Rule = {
 // ---------------------------------------------------------------------------
 const mv3007: Rule = {
   id: "MV3007",
-  severity: "warning",
+  severity: "medium",
   description:
     "Ingress should have TLS configured to ensure encrypted traffic.",
   check(ctx: RuleContext): Violation[] {
@@ -380,7 +380,7 @@ const mv3007: Rule = {
       return [
         {
           rule: "MV3007",
-          severity: "warning",
+          severity: "medium",
           message: `${resourceId} does not have TLS configured.`,
           resource: resourceId,
           namespace: resource.metadata.namespace,
@@ -399,7 +399,7 @@ const mv3007: Rule = {
 // ---------------------------------------------------------------------------
 const mv3008: Rule = {
   id: "MV3008",
-  severity: "info",
+  severity: "low",
   description: "Namespace does not have a default-deny NetworkPolicy. Without one, all pod-to-pod traffic is allowed by default.",
   check(ctx: RuleContext): Violation[] {
     const { resource, allResources } = ctx;
@@ -431,7 +431,7 @@ const mv3008: Rule = {
     if (!hasDefaultDeny) {
       return [{
         rule: "MV3008",
-        severity: "info",
+        severity: "low",
         message: `Namespace "${nsName}" has no default-deny NetworkPolicy. All pod-to-pod traffic is allowed by default.`,
         resource: `Namespace/${nsName}`,
         namespace: nsName,

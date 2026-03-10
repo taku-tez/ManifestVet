@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 function v(rule: string, resource = "Deployment/app", message = "test"): Violation {
-  return { rule, severity: "error", message, resource };
+  return { rule, severity: "high", message, resource };
 }
 
 describe("saveBaseline / loadBaseline", () => {

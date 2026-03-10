@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { computeDelta } from "../src/delta";
 import { Violation } from "../src/rules/types";
 
-function v(rule: string, resource: string, message: string, severity: Violation["severity"] = "error"): Violation {
+function v(rule: string, resource: string, message: string, severity: Violation["severity"] = "high"): Violation {
   return { rule, resource, message, severity };
 }
 

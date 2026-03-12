@@ -121,7 +121,7 @@ function readCache(name: string): { path: string; content: string }[] | null {
   const p = cacheKey(name);
   if (!fs.existsSync(p)) return null;
   const age = Date.now() - fs.statSync(p).mtimeMs;
-  if (age > 24 * 60 * 60 * 1000) return null; // 24h TTL
+  if (age > 7 * 24 * 60 * 60 * 1000) return null; // 7-day TTL
   return JSON.parse(fs.readFileSync(p, "utf-8"));
 }
 

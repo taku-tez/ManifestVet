@@ -10,6 +10,7 @@ import { formatJSON } from "./formatter/json";
 import { formatSARIF } from "./formatter/sarif";
 import { formatHTML } from "./formatter/html";
 import { formatMarkdown } from "./formatter/markdown";
+import { formatSummary } from "./formatter/summary";
 import { fetchManifestsFromGitHub } from "./github";
 import { fetchManifestsFromCluster } from "./cluster";
 import { computeDelta } from "./delta";
@@ -22,6 +23,12 @@ import { loadPlugins } from "./plugins";
 import { saveBaseline, loadBaseline, diffBaseline, fixedSinceBaseline } from "./baseline";
 import { evalRegoPolicy } from "./rego";
 import { startWebhookServer } from "./webhook";
+import { loadProjectConfig, loadConfigFile } from "./config-file";
+import { runInteractive } from "./interactive";
+import { renderHelmChart } from "./helm";
+import { startWatch, parseInterval } from "./watch";
+import { checkAPIVersion } from "./k8s-versions";
+import { printRules } from "./rules-cmd";
 
 const VERSION = "1.0.0";
 
@@ -35,8 +42,10 @@ Usage:
   manifestvet --dir <directory>
   manifestvet --github <owner/repo|blob-url> [--branch <branch>] [--path <subdir>]
   manifestvet --cluster [--context <name>] [--namespace <ns>|--all-namespaces] [--delta --dir <dir>]
+  manifestvet --helm <chart-dir> [--helm-values values.yaml] [--helm-set key=value]
   manifestvet hook install|uninstall|config
   manifestvet webhook [--port 8443] [--cert cert.pem --key key.pem] [--severity high]
+  manifestvet watch --cluster|--dir <dir> [--interval 5m]
 
 Options:
   --format <tty|json|sarif|html|markdown>   Output format (default: tty)
@@ -44,6 +53,17 @@ Options:
   --severity <critical|high|medium|low|info>  Minimum severity to report
   --no-color                                Disable colored output
   --stdin                                   Read from stdin
+  --config <file>                           Explicit config file path (default: .manifestvet.yaml)
+  --interactive                             Review violations interactively (F/I/S/Q)
+  --k8s-version <1.28>                      Target K8s version for deprecated API warnings
+
+  --helm <chart-dir>                        Render and lint a Helm chart
+  --helm-values <values.yaml>               Values file for helm template (repeatable)
+  --helm-set <key=value>                    Override a Helm value (repeatable)
+  --helm-release <name>                     Release name for helm template (default: manifestvet-preview)
+
+  -o, --output-file <path>                  Write report to file instead of stdout
+  --summary                                 Print aggregated summary (counts by severity/category/rule)
 
   --github <owner/repo|blob-url>            Scan manifests from GitHub
   --branch <branch>                         Branch to scan (default: main)
@@ -70,6 +90,19 @@ Options:
 
   -h, --help                                Show help
   -v, --version                             Show version
+
+Config file (.manifestvet.yaml):
+  ignore: [MV6007]
+  severity: high
+  format: tty
+  k8sVersion: "1.28"
+  plugins: [./custom-rules.js]
+  allowedRegistries: [gcr.io/my-company]
+  namespaceExclusions: [kube-system]
+  outputFile: report.html
+  severityOverrides:
+    MV6007: low
+    MV4002: medium
 
 Environment:
   GITHUB_TOKEN                              GitHub token for authenticated API requests
@@ -137,6 +170,22 @@ interface CLIArgs {
   webhookPort: number;
   webhookCert?: string;
   webhookKey?: string;
+  // New features
+  configFile?: string;
+  interactive: boolean;
+  severitySet: boolean;
+  k8sVersion?: string;
+  helm?: string;
+  helmValues: string[];
+  helmSet: string[];
+  helmRelease?: string;
+  watchCmd: boolean;
+  watchInterval: string;
+  exitZero: boolean;
+  rulesCmd: boolean;
+  rulesFilter?: string;
+  outputFile?: string;
+  summary: boolean;
 }
 
 function parseArgs(argv: string[]): CLIArgs {
@@ -151,6 +200,7 @@ function parseArgs(argv: string[]): CLIArgs {
     format: "tty",
     ignore: [],
     severity: "info",
+    severitySet: false,
     noColor: false,
     fix: false,
     fixLang: "ja",
@@ -161,6 +211,14 @@ function parseArgs(argv: string[]): CLIArgs {
     webhookPort: 8443,
     help: false,
     version: false,
+    interactive: false,
+    helmValues: [],
+    helmSet: [],
+    watchCmd: false,
+    watchInterval: "5m",
+    exitZero: false,
+    rulesCmd: false,
+    summary: false,
   };
 
   // Subcommands
@@ -171,6 +229,15 @@ function parseArgs(argv: string[]): CLIArgs {
   if (argv[0] === "webhook") {
     args.webhookCmd = true;
     argv = argv.slice(1);
+  }
+  if (argv[0] === "watch") {
+    args.watchCmd = true;
+    argv = argv.slice(1);
+  }
+  if (argv[0] === "rules") {
+    args.rulesCmd = true;
+    args.rulesFilter = argv[1] && !argv[1].startsWith("-") ? argv[1] : undefined;
+    argv = argv.slice(args.rulesFilter ? 2 : 1);
   }
 
   let i = 0;
@@ -199,6 +266,7 @@ function parseArgs(argv: string[]): CLIArgs {
         break;
       case "--severity":
         args.severity = argv[++i] as "critical" | "high" | "medium" | "low" | "info";
+        args.severitySet = true;
         break;
       case "--github":
         args.github = argv[++i];
@@ -256,6 +324,40 @@ function parseArgs(argv: string[]): CLIArgs {
       case "--baseline-save":
         args.baselineSave = argv[++i];
         break;
+      case "--config":
+        args.configFile = argv[++i];
+        break;
+      case "--interactive":
+        args.interactive = true;
+        break;
+      case "--k8s-version":
+        args.k8sVersion = argv[++i];
+        break;
+      case "--helm":
+        args.helm = argv[++i];
+        break;
+      case "--helm-values":
+        args.helmValues.push(argv[++i]);
+        break;
+      case "--helm-set":
+        args.helmSet.push(argv[++i]);
+        break;
+      case "--helm-release":
+        args.helmRelease = argv[++i];
+        break;
+      case "--interval":
+        args.watchInterval = argv[++i];
+        break;
+      case "--exit-zero":
+        args.exitZero = true;
+        break;
+      case "--output-file":
+      case "-o":
+        args.outputFile = argv[++i];
+        break;
+      case "--summary":
+        args.summary = true;
+        break;
       case "--port":
         args.webhookPort = parseInt(argv[++i], 10);
         break;
@@ -279,29 +381,35 @@ function parseArgs(argv: string[]): CLIArgs {
   return args;
 }
 
-function output(
+function renderOutput(
   violations: any[],
   format: CLIArgs["format"],
   noColor: boolean,
   firstFilePath?: string
-): void {
+): string {
   switch (format) {
-    case "json":
-      console.log(formatJSON(violations));
-      break;
-    case "sarif":
-      console.log(formatSARIF(violations, firstFilePath));
-      break;
-    case "html":
-      console.log(formatHTML(violations));
-      break;
-    case "markdown":
-      console.log(formatMarkdown(violations));
-      break;
+    case "json":     return formatJSON(violations);
+    case "sarif":    return formatSARIF(violations, firstFilePath);
+    case "html":     return formatHTML(violations);
+    case "markdown": return formatMarkdown(violations);
     case "tty":
-    default:
-      console.log(formatTTY(violations, { noColor }));
-      break;
+    default:         return formatTTY(violations, { noColor });
+  }
+}
+
+function output(
+  violations: any[],
+  format: CLIArgs["format"],
+  noColor: boolean,
+  firstFilePath?: string,
+  outputFile?: string
+): void {
+  const content = renderOutput(violations, format, noColor, firstFilePath);
+  if (outputFile) {
+    fs.writeFileSync(outputFile, content, "utf-8");
+    console.error(`[manifestvet] Report written to ${outputFile}`);
+  } else {
+    console.log(content);
   }
 }
 
@@ -341,6 +449,12 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  // Rules subcommand
+  if (args.rulesCmd) {
+    printRules({ filter: args.rulesFilter, format: args.format, noColor: args.noColor });
+    process.exit(0);
+  }
+
   if (args.help) {
     printHelp();
     process.exit(0);
@@ -351,12 +465,69 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
+  // Load .manifestvet.yaml (or explicit --config) and merge with CLI args
+  let projectCfg: ReturnType<typeof loadProjectConfig>["schema"] = {};
+  if (args.configFile) {
+    try {
+      projectCfg = loadConfigFile(args.configFile);
+    } catch (e: any) {
+      console.error(`[manifestvet] ${e.message}`);
+      process.exit(1);
+    }
+  } else {
+    const { schema, filePath } = loadProjectConfig();
+    projectCfg = schema;
+    if (filePath) {
+      console.error(`[manifestvet] Using config: ${filePath}`);
+    }
+  }
+
+  // CLI args take precedence: merge ignore lists, CLI severity wins if explicitly set
+  const mergedIgnore = [...(projectCfg.ignore ?? []), ...args.ignore];
+  const mergedPlugins = [...(projectCfg.plugins ?? []), ...args.plugins];
+  const resolvedSeverity = args.severitySet ? args.severity : (projectCfg.severity ?? args.severity);
+  const resolvedFormat = args.format !== "tty" ? args.format : (projectCfg.format ?? args.format);
+  const resolvedK8sVersion = args.k8sVersion ?? projectCfg.k8sVersion;
+  const resolvedOutputFile = args.outputFile ?? projectCfg.outputFile;
+  // Merge severity overrides: CLI doesn't have per-rule override flags, config file only
+  const resolvedSeverityOverrides = projectCfg.severityOverrides;
+
   const config: ManifestVetConfig = loadConfig({
-    ignore: args.ignore,
-    severity: args.severity,
-    format: args.format as any,
+    ignore: mergedIgnore,
+    severity: resolvedSeverity,
+    format: resolvedFormat as any,
     noColor: args.noColor,
+    k8sVersion: resolvedK8sVersion,
+    allowedRegistries: projectCfg.allowedRegistries,
+    namespaceExclusions: projectCfg.namespaceExclusions,
+    severityOverrides: resolvedSeverityOverrides,
   });
+
+  // Watch subcommand
+  if (args.watchCmd) {
+    let intervalMs: number;
+    try {
+      intervalMs = parseInterval(args.watchInterval);
+    } catch (e: any) {
+      console.error(`[manifestvet] ${e.message}`);
+      process.exit(1);
+    }
+    const watchExtraRules = mergedPlugins.length > 0 ? loadPlugins(mergedPlugins) : [];
+    await startWatch({
+      cluster: args.cluster,
+      clusterOpts: {
+        context: args.context,
+        namespace: args.namespace,
+        allNamespaces: args.allNamespaces,
+      },
+      dir: args.dir,
+      intervalMs,
+      config,
+      extraRules: watchExtraRules,
+      noColor: args.noColor,
+    });
+    return;
+  }
 
   let files: { path: string; content: string }[] = [];
 
@@ -377,6 +548,23 @@ async function main(): Promise<void> {
     files = collectKustomizeFiles(args.kustomize);
     if (files.length === 0) {
       console.error("No YAML files found via Kustomize.");
+      process.exit(1);
+    }
+  } else if (args.helm) {
+    try {
+      files = renderHelmChart({
+        chartDir: args.helm,
+        valuesFiles: args.helmValues,
+        setValues: args.helmSet,
+        releaseName: args.helmRelease,
+        namespace: args.namespace,
+      });
+    } catch (e: any) {
+      console.error(`[manifestvet] Helm error: ${e.message}`);
+      process.exit(1);
+    }
+    if (files.length === 0) {
+      console.error("[manifestvet] helm template produced no output.");
       process.exit(1);
     }
   } else if (args.cluster) {
@@ -416,7 +604,7 @@ async function main(): Promise<void> {
         process.exit(0);
       }
 
-      output(delta, args.format, args.noColor, "cluster");
+      output(delta, args.format, args.noColor, "cluster", resolvedOutputFile);
       process.exit(delta.some((v) => v.severity === "critical" || v.severity === "high") ? 1 : 0);
       return;
     }
@@ -449,8 +637,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Load plugin rules
-  const extraRules = args.plugins.length > 0 ? loadPlugins(args.plugins) : [];
+  // Load plugin rules (mergedPlugins already combines config file + CLI plugins)
+  const extraRules = mergedPlugins.length > 0 ? loadPlugins(mergedPlugins) : [];
 
   let violations = lint(resources, config, extraRules);
 
@@ -493,11 +681,32 @@ async function main(): Promise<void> {
   }
 
   // Annotate with fix suggestions
-  if (args.fix || args.llm) {
+  if (args.fix || args.llm || args.interactive) {
     violations = await annotateFixes(violations, {
-      lang: args.fixLang,
+      lang: projectCfg.fixLang ?? args.fixLang,
       llm: args.llm,
     });
+  }
+
+  // Interactive fix mode
+  if (args.interactive) {
+    await runInteractive(violations, args.noColor);
+    process.exit(0);
+    return;
+  }
+
+  // K8s version API check: warn about deprecated/removed APIs in scanned resources
+  if (resolvedK8sVersion) {
+    for (const resource of resources) {
+      const check = checkAPIVersion(resource.apiVersion, resource.kind, resolvedK8sVersion);
+      if (check) {
+        const replacement = check.replacement ? ` Use ${check.replacement} instead.` : "";
+        const msg = check.status === "removed"
+          ? `[manifestvet] ${resource.kind} uses ${resource.apiVersion} which was removed in K8s ${check.since}.${replacement}`
+          : `[manifestvet] ${resource.kind} uses ${resource.apiVersion} which was deprecated in K8s ${check.since}.${replacement}`;
+        console.error(msg);
+      }
+    }
   }
 
   // Auto-apply safe fixes
@@ -521,8 +730,26 @@ async function main(): Promise<void> {
     }
   }
 
-  output(violations, args.format, args.noColor, files[0]?.path);
+  // Summary mode: print aggregated counts instead of individual violations
+  if (args.summary) {
+    const summaryText = formatSummary(violations, { noColor: args.noColor });
+    if (resolvedOutputFile) {
+      fs.writeFileSync(resolvedOutputFile, summaryText, "utf-8");
+      console.error(`[manifestvet] Summary written to ${resolvedOutputFile}`);
+    } else {
+      console.log(summaryText);
+    }
+    if (args.exitZero) process.exit(0);
+    const hasErrors = violations.some((v) => v.severity === "critical" || v.severity === "high");
+    process.exit(hasErrors ? 1 : 0);
+    return;
+  }
 
+  output(violations, args.format, args.noColor, files[0]?.path, resolvedOutputFile);
+
+  if (args.exitZero) {
+    process.exit(0);
+  }
   const hasErrors = violations.some((v) => v.severity === "critical" || v.severity === "high");
   process.exit(hasErrors ? 1 : 0);
 }

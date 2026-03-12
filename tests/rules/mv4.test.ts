@@ -958,14 +958,14 @@ metadata:
 spec:
   containers:
     - name: app
-      image: gcr.io/my-project/myapp:1.0.0
+      image: harbor.internal.company.com/my-project/myapp:1.0.0
 `,
     );
     expect(violations).toHaveLength(1);
     expect(violations[0].rule).toBe("MV4006");
     expect(violations[0].severity).toBe("info");
     expect(violations[0].message).toContain("app");
-    expect(violations[0].message).toContain("gcr.io/my-project/myapp:1.0.0");
+    expect(violations[0].message).toContain("harbor.internal.company.com/my-project/myapp:1.0.0");
     expect(violations[0].message).toContain("no imagePullSecrets");
     expect(violations[0].path).toBe("spec.imagePullSecrets");
     expect(violations[0].resource).toBe("Pod/private-pod");
@@ -981,10 +981,10 @@ metadata:
   name: secret-pod
 spec:
   imagePullSecrets:
-    - name: gcr-credentials
+    - name: harbor-credentials
   containers:
     - name: app
-      image: gcr.io/my-project/myapp:1.0.0
+      image: harbor.internal.company.com/my-project/myapp:1.0.0
 `,
     );
     expect(violations).toHaveLength(0);
@@ -1072,9 +1072,9 @@ metadata:
 spec:
   containers:
     - name: app
-      image: gcr.io/my-project/app:1.0
+      image: harbor.corp.example.com/my-project/app:1.0
     - name: sidecar
-      image: quay.io/my-org/proxy:2.0
+      image: registry.internal.io/my-org/proxy:2.0
 `,
     );
     expect(violations).toHaveLength(2);
@@ -1093,7 +1093,7 @@ metadata:
 spec:
   initContainers:
     - name: setup
-      image: gcr.io/my-project/setup:1.0
+      image: harbor.internal.company.com/my-project/setup:1.0
   containers:
     - name: app
       image: nginx:1.25.3
@@ -1123,7 +1123,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: gcr.io/my-project/webapp:3.0
+          image: harbor.internal.company.com/my-project/webapp:3.0
 `,
     );
     expect(violations).toHaveLength(1);
@@ -1147,6 +1147,31 @@ spec:
       image: gcr.io/proj/app:1.0
     - name: sidecar
       image: quay.io/org/sidecar:2.0
+`,
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should not flag well-known public registries (quay.io, ghcr.io, gcr.io, etc.)", () => {
+    const violations = checkRule(
+      "MV4006",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: public-registries-pod
+spec:
+  containers:
+    - name: a
+      image: quay.io/my-org/app:1.0
+    - name: b
+      image: ghcr.io/my-org/proxy:2.0
+    - name: c
+      image: gcr.io/my-project/tool:3.0
+    - name: d
+      image: registry.k8s.io/pause:3.9
+    - name: e
+      image: public.ecr.aws/amazonlinux/amazonlinux:2
 `,
     );
     expect(violations).toHaveLength(0);
@@ -1197,7 +1222,7 @@ spec:
   imagePullSecrets: []
   containers:
     - name: app
-      image: gcr.io/my-project/myapp:1.0
+      image: harbor.internal.company.com/my-project/myapp:1.0
 `,
     );
     expect(violations).toHaveLength(1);
@@ -1274,6 +1299,132 @@ spec:
     - name: app
       image: docker.io/library/nginx:1.25
 `,
+    );
+    expect(violations).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// MV4008 - Image from disallowed registry
+// ============================================================================
+describe("MV4008 - Image from disallowed registry", () => {
+  function checkMV4008(yaml: string, allowedRegistries: string[]) {
+    const { resources } = parseYAML(yaml);
+    const rule = mv4Rules.find((r) => r.id === "MV4008")!;
+    return rule.check({
+      resource: resources[0],
+      allResources: resources,
+      config: { allowedRegistries },
+    });
+  }
+
+  it("should flag image from disallowed registry", () => {
+    const violations = checkMV4008(
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+    - name: app
+      image: docker.io/nginx:1.25
+`,
+      ["gcr.io/my-company"]
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].rule).toBe("MV4008");
+    expect(violations[0].severity).toBe("high");
+    expect(violations[0].message).toContain("docker.io/nginx:1.25");
+    expect(violations[0].message).toContain("gcr.io/my-company");
+  });
+
+  it("should pass when image comes from an allowed registry", () => {
+    const violations = checkMV4008(
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-pod
+spec:
+  containers:
+    - name: app
+      image: gcr.io/my-company/myimage:1.0
+`,
+      ["gcr.io/my-company"]
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should not fire when allowedRegistries is empty (disabled)", () => {
+    const violations = checkMV4008(
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+spec:
+  containers:
+    - name: app
+      image: some-random-registry.io/image:latest
+`,
+      []
+    );
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should not fire when no config is provided", () => {
+    const { resources } = parseYAML(`
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+spec:
+  containers:
+    - name: app
+      image: some-registry.io/image:1.0
+`);
+    const rule = mv4Rules.find((r) => r.id === "MV4008")!;
+    const violations = rule.check({ resource: resources[0], allResources: resources });
+    expect(violations).toHaveLength(0);
+  });
+
+  it("should flag only disallowed containers in multi-container pod", () => {
+    const violations = checkMV4008(
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi
+spec:
+  containers:
+    - name: allowed
+      image: gcr.io/company/app:1.0
+    - name: disallowed
+      image: docker.io/nginx:1.25
+`,
+      ["gcr.io/company"]
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0].message).toContain("disallowed");
+    expect(violations[0].message).toContain("docker.io/nginx:1.25");
+  });
+
+  it("should support multiple allowed registries", () => {
+    const violations = checkMV4008(
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-registry
+spec:
+  containers:
+    - name: a
+      image: gcr.io/company/app:1.0
+    - name: b
+      image: 123456.dkr.ecr.us-east-1.amazonaws.com/service:v2
+`,
+      ["gcr.io/company", "123456.dkr.ecr.us-east-1.amazonaws.com"]
     );
     expect(violations).toHaveLength(0);
   });

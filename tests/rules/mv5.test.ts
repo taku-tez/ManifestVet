@@ -106,6 +106,33 @@ spec:
     expect(violations).toHaveLength(0);
   });
 
+  it("should not flag boolean-like values (feature flags, not credentials)", () => {
+    const violations = checkRule(
+      "MV5001",
+      `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: flags-pod
+spec:
+  containers:
+    - name: app
+      image: myapp:1.0
+      env:
+        - name: MYSQL_RANDOM_ROOT_PASSWORD
+          value: "yes"
+        - name: ENABLE_SECRET_STORE
+          value: "true"
+        - name: DISABLE_TOKEN_AUTH
+          value: "1"
+        - name: API_KEY
+          value: "false"
+`,
+    );
+    // All are boolean flags, none should be flagged as hardcoded credentials
+    expect(violations).toHaveLength(0);
+  });
+
   it("should flag multiple sensitive env vars in the same container", () => {
     const violations = checkRule(
       "MV5001",
@@ -628,7 +655,9 @@ data:
   credential_file: "/etc/creds"
 `,
     );
-    expect(violations).toHaveLength(2);
+    // MY_SECRET fires; credential_file ends with _FILE (reference suffix) → filtered
+    expect(violations).toHaveLength(1);
+    expect(violations[0].path).toBe("data.MY_SECRET");
   });
 
   it("should include namespace when present", () => {
@@ -661,7 +690,9 @@ data:
   jwt_token_expiry: "3600"
 `,
     );
-    expect(violations).toHaveLength(2);
+    // redis_password_file ends with _FILE (reference suffix) → filtered; jwt_token_expiry contains TOKEN → fires
+    expect(violations).toHaveLength(1);
+    expect(violations[0].path).toBe("data.jwt_token_expiry");
   });
 });
 

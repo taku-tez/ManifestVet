@@ -1,5 +1,5 @@
 # ManifestVet OSS Scan Analysis
-*Generated: 2026-03-10T07:41:53.134Z*
+*Generated: 2026-03-12T02:25:18.961Z*
 
 ## Summary
 
@@ -9,35 +9,35 @@
 | Successful | 43 |
 | Skipped (no manifests) | 1 |
 | Errored | 0 |
-| Total resources | 4,656 |
-| Total violations | 13,649 |
-| Avg violations/resource | 2.93 |
-| Rules coverage | 88.9% (56/63 rules fired) |
+| Total resources | 4,648 |
+| Total violations | 6,167 |
+| Avg violations/resource | 1.33 |
+| Rules coverage | 87.7% (57/65 rules fired) |
 
 ## Top 20 Most Violated Rules
 
 | Rank | Rule | Severity | Projects | Fire Rate | Violations |
 |------|------|----------|----------|-----------|------------|
-| 1 | `MV6007` | info | 31 | 72.1% | 789 |
-| 2 | `MV1008` | warning | 26 | 60.5% | 742 |
-| 3 | `MV6011` | info | 30 | 69.8% | 711 |
-| 4 | `MV4006` | info | 22 | 51.2% | 659 |
-| 5 | `MV1009` | info | 22 | 51.2% | 649 |
-| 6 | `MV4002` | info | 30 | 69.8% | 639 |
-| 7 | `MV1016` | warning | 31 | 72.1% | 595 |
-| 8 | `MV1011` | info | 31 | 72.1% | 594 |
-| 9 | `MV1010` | warning | 23 | 53.5% | 580 |
-| 10 | `MV1012` | warning | 22 | 51.2% | 559 |
-| 11 | `MV1002` | error | 22 | 51.2% | 549 |
-| 12 | `MV6003` | warning | 25 | 58.1% | 524 |
-| 13 | `MV1001` | error | 24 | 55.8% | 509 |
-| 14 | `MV6004` | warning | 25 | 58.1% | 457 |
-| 15 | `MV6010` | info | 29 | 67.4% | 451 |
-| 16 | `MV6012` | info | 27 | 62.8% | 417 |
-| 17 | `MV6006` | info | 26 | 60.5% | 409 |
-| 18 | `MV6002` | warning | 27 | 62.8% | 397 |
-| 19 | `MV6005` | info | 27 | 62.8% | 347 |
-| 20 | `MV6001` | info | 18 | 41.9% | 337 |
+| 1 | `MV6007` | low | 31 | 72.1% | 366 |
+| 2 | `MV6011` | low | 30 | 69.8% | 342 |
+| 3 | `MV4002` | info | 30 | 69.8% | 341 |
+| 4 | `MV1008` | medium | 26 | 60.5% | 322 |
+| 5 | `MV1010` | low | 23 | 53.5% | 295 |
+| 6 | `MV1012` | medium | 22 | 51.2% | 287 |
+| 7 | `MV1002` | high | 22 | 51.2% | 282 |
+| 8 | `MV1009` | info | 22 | 51.2% | 282 |
+| 9 | `MV1011` | low | 31 | 72.1% | 275 |
+| 10 | `MV1016` | medium | 31 | 72.1% | 274 |
+| 11 | `MV1001` | high | 24 | 55.8% | 271 |
+| 12 | `MV6003` | low | 25 | 58.1% | 256 |
+| 13 | `MV6004` | low | 25 | 58.1% | 230 |
+| 14 | `MV6010` | low | 29 | 67.4% | 200 |
+| 15 | `MV6002` | low | 27 | 62.8% | 186 |
+| 16 | `MV6012` | low | 27 | 62.8% | 186 |
+| 17 | `MV6006` | low | 26 | 60.5% | 180 |
+| 18 | `MV6005` | low | 27 | 62.8% | 162 |
+| 19 | `MV6001` | low | 18 | 41.9% | 161 |
+| 20 | `MV1015` | low | 16 | 37.2% | 155 |
 
 ## Rules That Never Fired
 
@@ -51,35 +51,36 @@ Possible causes: incorrect implementation, extremely rare condition, or rules th
 - `MV2009` — RoleBinding/ClusterRoleBinding should not bind to system:unauthenticated or system:anonymous.
 - `MV3006` — Pod should not use hostAliases. hostAliases modify the pod's /etc/hosts file which can be used to redirect traffic or bypass DNS.
 - `MV4003` — Container imagePullPolicy is set to "Never". This means the image will never be pulled from a registry and must already exist on the node.
+- `MV4008` — Container image is pulled from a registry that is not in the allowedRegistries list. Only images from approved registries should be used.
 
 ## Insights by Project Category
 
 | Category | Projects | Avg Violations/Resource | Top Rules |
 |----------|----------|------------------------|-----------|
-| service-mesh | 1 | 4.83 | MV4002, MV4006, MV6007 |
-| cni | 2 | 4.21 | MV1010, MV1012, MV1008 |
-| logging | 2 | 3.80 | MV5004, MV1001, MV1002 |
-| networking | 6 | 3.77 | MV1008, MV4006, MV6007 |
-| tracing | 3 | 3.21 | MV1001, MV1002, MV1010 |
-| storage | 2 | 3.14 | MV2001, MV1001, MV1002 |
-| monitoring | 12 | 2.96 | MV6008, MV4002, MV6007 |
-| gitops | 2 | 2.78 | MV1008, MV1009, MV4002 |
-| cicd | 3 | 2.45 | MV6011, MV1008, MV1009 |
-| ingress | 2 | 2.20 | MV6011, MV1008, MV4006 |
-| secrets | 3 | 1.96 | MV5004, MV1001, MV1002 |
-| messaging | 2 | 1.86 | MV6009, MV1010, MV1016 |
-| cluster-management | 1 | 1.85 | MV1008, MV1010, MV1016 |
-| workflow | 1 | 1.78 | MV6009, MV1008, MV6002 |
-| autoscaling | 1 | 1.41 | MV6009, MV4001, MV1016 |
-| platform | 7 | 1.40 | MV6009, MV1016, MV4002 |
-| serverless | 2 | 1.21 | MV1016, MV1011, MV4002 |
-| security | 7 | 1.18 | MV4002, MV6007, MV6011 |
-| policy | 2 | 1.16 | MV4002, MV6007, MV6011 |
-| database | 1 | 1.14 | MV6009, MV4001, MV1016 |
-| postgres | 1 | 1.14 | MV6009, MV4001, MV1016 |
-| events | 1 | 1.10 | MV1016, MV1011, MV4002 |
-| kafka | 1 | 0.74 | MV2006, MV1001, MV1002 |
-| tls | 1 | 0.25 | MV3008 |
+| service-mesh | 1 | 2.69 | MV4002, MV6007, MV1008 |
+| storage | 2 | 2.25 | MV1001, MV1002, MV1008 |
+| cni | 2 | 1.98 | MV1012, MV1010, MV1002 |
+| tracing | 3 | 1.92 | MV1001, MV1002, MV1012 |
+| secrets | 3 | 1.84 | MV5004, MV1001, MV1002 |
+| networking | 6 | 1.78 | MV1008, MV6007, MV1010 |
+| logging | 2 | 1.51 | MV4002, MV5004, MV5001 |
+| monitoring | 12 | 1.42 | MV6008, MV4002, MV6007 |
+| serverless | 2 | 1.19 | MV6007, MV4002, MV1016 |
+| autoscaling | 1 | 1.15 | MV1016, MV4001, MV1011 |
+| events | 1 | 1.09 | MV1016, MV1011, MV6007 |
+| messaging | 2 | 1.04 | MV2006, MV6002, MV4002 |
+| security | 7 | 0.94 | MV4002, MV6007, MV6011 |
+| ingress | 2 | 0.88 | MV6008, MV6011, MV1008 |
+| policy | 2 | 0.84 | MV4002, MV1008, MV6007 |
+| platform | 7 | 0.77 | MV4002, MV4001, MV6002 |
+| cluster-management | 1 | 0.74 | MV4002, MV4001, MV6001 |
+| workflow | 1 | 0.73 | MV1008, MV1011, MV6001 |
+| kafka | 1 | 0.70 | MV2006, MV1001, MV1002 |
+| cicd | 3 | 0.57 | MV6011, MV4002, MV1008 |
+| gitops | 2 | 0.50 | MV4002, MV1008, MV6011 |
+| database | 1 | 0.41 | MV4001, MV6002, MV4002 |
+| postgres | 1 | 0.41 | MV4001, MV6002, MV4002 |
+| tls | 1 | 0.13 | MV3008 |
 | backup | 1 | 0.00 |  |
 | infra | 1 | 0.00 |  |
 | virtualization | 1 | 0.00 |  |
@@ -88,16 +89,16 @@ Possible causes: incorrect implementation, extremely rare condition, or rules th
 
 | Project | Resources | Violations | Violations/Resource | Top Rules |
 |---------|-----------|------------|--------------------|-----------| 
-| [fluentd-daemonset](https://github.com/fluent/fluentd-kubernetes-daemonset) | 33 | 236 | 7.15 | MV5004, MV1001, MV1002 |
-| [cilium](https://github.com/cilium/cilium) | 501 | 3198 | 6.38 | MV1001, MV1002, MV1010 |
-| [istio](https://github.com/istio/istio) | 339 | 1636 | 4.83 | MV4002, MV4006, MV6007 |
-| [secrets-store-csi](https://github.com/kubernetes-sigs/secrets-store-csi-driver) | 17 | 77 | 4.53 | MV5004, MV1001, MV1002 |
-| [pyroscope](https://github.com/grafana/pyroscope) | 254 | 1073 | 4.22 | MV6008, MV1002, MV1008 |
-| [grafana-tempo](https://github.com/grafana/tempo) | 119 | 440 | 3.70 | MV1001, MV1002, MV1010 |
-| [longhorn](https://github.com/longhorn/longhorn) | 112 | 396 | 3.54 | MV2001, MV1001, MV1002 |
-| [rabbitmq-operator](https://github.com/rabbitmq/cluster-operator) | 22 | 71 | 3.23 | MV6009, MV4001, MV1010 |
-| [metallb](https://github.com/metallb/metallb) | 217 | 668 | 3.08 | MV4002, MV4006, MV6007 |
-| [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) | 23 | 69 | 3.00 | MV1008, MV1016, MV1009 |
+| [secrets-store-csi](https://github.com/kubernetes-sigs/secrets-store-csi-driver) | 17 | 71 | 4.18 | MV5004, MV1001, MV1002 |
+| [cilium](https://github.com/cilium/cilium) | 501 | 1632 | 3.26 | MV1001, MV1002, MV1012 |
+| [istio](https://github.com/istio/istio) | 339 | 911 | 2.69 | MV4002, MV6007, MV1008 |
+| [jaeger-operator](https://github.com/jaegertracing/jaeger-operator) | 41 | 105 | 2.56 | MV1001, MV1002, MV1008 |
+| [longhorn](https://github.com/longhorn/longhorn) | 112 | 284 | 2.54 | MV1001, MV1002, MV1008 |
+| [fluentd-daemonset](https://github.com/fluent/fluentd-kubernetes-daemonset) | 33 | 76 | 2.30 | MV4002, MV4007, MV5001 |
+| [vault-k8s](https://github.com/hashicorp/vault-k8s) | 10 | 21 | 2.10 | MV1001, MV1002, MV6009 |
+| [kube-state-metrics](https://github.com/kubernetes/kube-state-metrics) | 23 | 46 | 2.00 | MV1008, MV1016, MV1011 |
+| [grafana-tempo](https://github.com/grafana/tempo) | 119 | 220 | 1.85 | MV1001, MV1002, MV1012 |
+| [knative-serving](https://github.com/knative/serving) | 59 | 86 | 1.46 | MV6007, MV6011, MV4002 |
 
 ## Cleanest Projects (top 10)
 
@@ -112,12 +113,12 @@ Possible causes: incorrect implementation, extremely rare condition, or rules th
 | [dapr](https://github.com/dapr/dapr) | 5 | 0 | 0.00 |
 | [opentelemetry-operator](https://github.com/open-telemetry/opentelemetry-operator) | 10 | 1 | 0.10 |
 | [datadog-operator](https://github.com/DataDog/datadog-operator) | 10 | 1 | 0.10 |
-| [cert-manager](https://github.com/cert-manager/cert-manager) | 8 | 2 | 0.25 |
+| [descheduler](https://github.com/kubernetes-sigs/descheduler) | 9 | 1 | 0.11 |
 
 ## Rule Improvement Suggestions
 
-- Rules that never fired (possible bugs or very rare conditions): MV1006, MV1014, MV1018, MV2008, MV2009, MV3006, MV4003
-- Rarely firing rules (fired in <5% of projects) — verify correctness: MV5005, MV1007, MV5002, MV1017, MV3007, MV2004, MV3005
+- Rules that never fired (possible bugs or very rare conditions): MV1006, MV1014, MV1018, MV2008, MV2009, MV3006, MV4003, MV4008
+- Rarely firing rules (fired in <5% of projects) — verify correctness: MV1007, MV4006, MV3007, MV1017, MV5002, MV2004, MV3005, MV5005
 
 ---
 *Generated by ManifestVet OSS Scanner*

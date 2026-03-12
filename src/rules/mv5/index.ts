@@ -105,10 +105,46 @@ function podSpecPath(resource: RuleContext["resource"], suffix?: string): string
 }
 
 /**
+ * Boolean-like values that indicate the env var is a feature flag, not a credential.
+ * e.g. MYSQL_RANDOM_ROOT_PASSWORD="yes" tells MySQL to generate a random password;
+ * it is not itself a hardcoded password.
+ */
+const BOOLEAN_VALUES = new Set(["yes", "no", "true", "false", "1", "0", "on", "off", "enabled", "disabled"]);
+
+/**
+ * Suffixes that indicate the env var holds a reference NAME or PATH,
+ * not an actual secret value. e.g. WEBHOOK_SECRET_NAME="webhook-secret"
+ * is a Kubernetes object name reference, not a hardcoded credential.
+ */
+const REFERENCE_SUFFIXES = [
+  "_NAME",
+  "_PATH",
+  "_FILE",
+  "_DIR",
+  "_DIRECTORY",
+  "_NAMESPACE",
+  "_INTERVAL",
+  "_PERIOD",
+  "_TIMEOUT",
+  "_SIZE",
+  "_TYPE",
+  "_PREFIX",
+  "_SUFFIX",
+  "_LABEL",
+  "_ANNOTATION",
+  "_MOUNT",
+  "_MOUNT_PATH",
+];
+
+/**
  * Check if a name matches any of the sensitive patterns (case-insensitive).
+ * Returns false for env vars whose names end with reference-only suffixes
+ * (e.g. *_NAME, *_PATH) since those hold object references, not credentials.
  */
 function matchesSensitivePattern(name: string): boolean {
   const upper = name.toUpperCase();
+  // Skip names that end with a reference suffix — they hold names/paths, not secrets
+  if (REFERENCE_SUFFIXES.some((s) => upper.endsWith(s))) return false;
   return SENSITIVE_PATTERNS.some((pattern) => upper.includes(pattern));
 }
 
@@ -137,7 +173,8 @@ const mv5001: Rule = {
           envVar.value !== null &&
           !envVar.valueFrom &&
           typeof envVar.value === "string" &&
-          envVar.value !== ""
+          envVar.value !== "" &&
+          !BOOLEAN_VALUES.has(envVar.value.toLowerCase())
         ) {
           violations.push({
             rule: "MV5001",

@@ -122,21 +122,50 @@ function hasDigest(image: string): boolean {
 }
 
 /**
- * Checks whether an image reference appears to target a private registry.
- * A private registry is identified by the presence of a "." before the first "/",
- * which covers patterns like gcr.io/..., *.azurecr.io/..., *.ecr.aws/..., etc.
+ * Well-known public registries that do not require authentication credentials
+ * for pulling public images. Images from these registries are excluded from
+ * the MV4006 "missing imagePullSecrets" check.
+ */
+const PUBLIC_REGISTRIES = new Set([
+  "docker.io",
+  "index.docker.io",
+  "quay.io",
+  "ghcr.io",
+  "gcr.io",
+  "k8s.gcr.io",
+  "registry.k8s.io",
+  "us.gcr.io",
+  "eu.gcr.io",
+  "asia.gcr.io",
+  "mirror.gcr.io",
+  "public.ecr.aws",
+  "docker.elastic.co",
+  "mcr.microsoft.com",
+  "nvcr.io",
+  "registry.suse.com",
+  "registry.access.redhat.com",
+  "registry.fedoraproject.org",
+  "docker.cloudsmith.io",
+]);
+
+/**
+ * Returns true if the image references a potentially private/custom registry
+ * that would require imagePullSecrets. Well-known public registries are excluded.
  */
 function isPrivateRegistry(image: string): boolean {
   if (!image) return false;
 
   const slashIndex = image.indexOf("/");
   if (slashIndex === -1) {
-    // No slash means it is a Docker Hub short name (e.g. "nginx") - not private
+    // No slash = Docker Hub short name (e.g. "nginx") — public
     return false;
   }
 
   const registry = image.substring(0, slashIndex);
-  return registry.includes(".");
+  // Must have a "." to be a registry hostname (vs e.g. "library/nginx")
+  if (!registry.includes(".")) return false;
+  // Skip well-known public registries
+  return !PUBLIC_REGISTRIES.has(registry.toLowerCase());
 }
 
 // ---------------------------------------------------------------------------
@@ -325,7 +354,7 @@ const mv4006: Rule = {
   id: "MV4006",
   severity: "info",
   description:
-    "Pod references a private registry image but does not define imagePullSecrets. Without pull secrets, the kubelet may fail to authenticate with the private registry.",
+    "Pod references an image from a custom/private registry but does not define imagePullSecrets. Without pull secrets, the kubelet may fail to authenticate. Well-known public registries (quay.io, ghcr.io, gcr.io, etc.) are excluded from this check.",
   check(ctx: RuleContext): Violation[] {
     const { resource } = ctx;
     if (!isPodBearing(resource)) return [];
@@ -402,6 +431,47 @@ const mv4007: Rule = {
 };
 
 // ---------------------------------------------------------------------------
+// MV4008 - Image from registry not in allowedRegistries list
+// Only fires when config.allowedRegistries is non-empty.
+// ---------------------------------------------------------------------------
+const mv4008: Rule = {
+  id: "MV4008",
+  severity: "high",
+  description:
+    "Container image is pulled from a registry that is not in the allowedRegistries list. Only images from approved registries should be used.",
+  check(ctx: RuleContext): Violation[] {
+    const allowed = ctx.config?.allowedRegistries;
+    if (!allowed || allowed.length === 0) return [];
+
+    const { resource } = ctx;
+    if (!isPodBearing(resource)) return [];
+
+    const resourceId = `${resource.kind}/${resource.metadata.name}`;
+    const violations: Violation[] = [];
+
+    for (const { container, index, prefix } of getContainers(resource)) {
+      const image: string = container.image ?? "";
+      if (!image) continue;
+
+      const isAllowed = allowed.some((registry) => image.startsWith(registry));
+      if (!isAllowed) {
+        violations.push({
+          rule: "MV4008",
+          severity: "high",
+          message: `Container "${container.name ?? index}" uses image "${image}" from a registry not in the allowedRegistries list: [${allowed.join(", ")}].`,
+          resource: resourceId,
+          namespace: resource.metadata.namespace,
+          path: containerPath(resource, prefix, index, "image"),
+          fix: `Use an image from one of the approved registries: ${allowed.join(", ")}`,
+        });
+      }
+    }
+
+    return violations;
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Export all MV4 rules
 // ---------------------------------------------------------------------------
 export const mv4Rules: Rule[] = [
@@ -412,4 +482,5 @@ export const mv4Rules: Rule[] = [
   mv4005,
   mv4006,
   mv4007,
+  mv4008,
 ];

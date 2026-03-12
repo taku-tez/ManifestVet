@@ -12,10 +12,16 @@ export interface Violation {
   fix?: string;
 }
 
+/** Subset of ManifestVetConfig that rules may read. */
+export interface RuleConfig {
+  allowedRegistries?: string[];
+}
+
 export interface RuleContext {
   resource: K8sResource;
   allResources: K8sResource[];
   filePath?: string;
+  config?: RuleConfig;
 }
 
 export interface Rule {

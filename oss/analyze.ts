@@ -145,8 +145,8 @@ function analyze(results: ScanResult[]): AnalysisReport {
       .slice(0, 5)
       .map(([rule]) => rule);
 
-    const errors = r.violations.filter(v => v.severity === "error").length;
-    const warnings = r.violations.filter(v => v.severity === "warning").length;
+    const criticals = r.violations.filter(v => v.severity === "critical" || v.severity === "high").length;
+    const warnings = r.violations.filter(v => v.severity === "medium" || v.severity === "low").length;
 
     return {
       name: r.name,
@@ -156,7 +156,7 @@ function analyze(results: ScanResult[]): AnalysisReport {
       violationCount: r.violationCount,
       violationsPerResource: r.resourceCount > 0 ? r.violationCount / r.resourceCount : 0,
       topRules,
-      errorRate: r.resourceCount > 0 ? errors / r.resourceCount : 0,
+      errorRate: r.resourceCount > 0 ? criticals / r.resourceCount : 0,
       warningRate: r.resourceCount > 0 ? warnings / r.resourceCount : 0,
     };
   });

@@ -77,6 +77,28 @@
 
 ---
 
+## v1.0.1 — Developer Experience
+
+**Goal:** 設定ファイル、インタラクティブ修正、Helm 対応、K8s バージョン認識、継続監視モード。
+
+- [x] `.manifestvet.yaml` 設定ファイル（`ignore`, `severity`, `format`, `k8sVersion`, `plugins`, `allowedRegistries`, `namespaceExclusions`）
+- [x] `--interactive` — 違反を1件ずつ確認して F/I/S/Q でアクション
+- [x] `--helm <chart-dir>` — `helm template` を内部実行してスキャン（`--helm-values`, `--helm-set`）
+- [x] `--k8s-version 1.28` — 廃止・削除 API の検出とルールゲーティング（25+ API エントリ）
+- [x] `manifestvet watch --cluster|--dir <dir> [--interval 5m]` — 差分のみ表示する継続監視モード
+- [x] `--config <file>` — 明示的な設定ファイルパス指定
+- [x] 名前空間除外（`namespaceExclusions`）— 除外した名前空間のリソースをスキップ
+- [x] MV4008 — `allowedRegistries` リスト外レジストリのイメージを検出（`RuleContext.config` 経由）
+- [x] `--exit-zero` — 違反があっても exit 0（CI の段階的導入向け）
+- [x] `manifestvet rules` サブコマンド — ルール一覧を tty/json/markdown 形式で出力（フィルタ対応）
+- [x] テスト追加: config-file (14), k8s-versions (18), helm (10), interactive (4), watch (5), rules-cmd (7), MV4008 (6) — 計 64 テスト追加
+- [x] `--output-file <path>` / `-o` — レポートをファイルに書き出し（`.manifestvet.yaml` の `outputFile` でも設定可）
+- [x] `severityOverrides` — ルールごとの severity 上書き（大文字小文字不問、フィルタリングにも反映）
+- [x] `--summary` — 違反の集計サマリ表示（severity/カテゴリ/ルール別カウント＋棒グラフ）
+- [x] テスト追加: severity-override (6), formatter-summary (7), config-file 拡張 (2) — 計 15 テスト追加
+
+---
+
 ## v1.1.0 — CI/CD Native
 
 **Goal:** ゼロ設定で CI/CD パイプラインに導入できる、GitHub Actions Marketplace での公開。
